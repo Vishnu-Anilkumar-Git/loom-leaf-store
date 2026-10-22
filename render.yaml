@@ -34,7 +34,7 @@ services:
         value: "0"
       - key: RAZORPAY_KEY_ID
         value: ""
-      - key: ztjz*#$6f9y3)j1f!h&=44-ds7a%(+6up^^8si1dkkd^ag&x!%
+      - key: RAZORPAY_KEY_SECRET
         value: ""
       - key: DJANGO_EMAIL_BACKEND
         value: django.core.mail.backends.console.EmailBackend

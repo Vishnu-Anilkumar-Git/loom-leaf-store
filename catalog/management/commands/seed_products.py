@@ -329,7 +329,7 @@ class Command(BaseCommand):
             category.is_active = True
             category.sort_order = order
             category.save(update_fields=["name", "description", "is_active", "sort_order"])
-            if created or not category.image:
+            if created or not category.image or not category.image.storage.exists(category.image.name):
                 self._attach(category, "image", STATIC / image_name)
 
         # Keep old department rows and their linked products for order history, but hide them.
@@ -340,7 +340,7 @@ class Command(BaseCommand):
                 slug=slug,
                 defaults={"name": name, "description": description, "sort_order": order},
             )
-            if created or not collection.image:
+            if created or not collection.image or not collection.image.storage.exists(collection.image.name):
                 self._attach(collection, "image", STATIC / image_name)
 
         size_map = {}
@@ -392,7 +392,10 @@ class Command(BaseCommand):
                 # Reclassify seeded legacy SKUs without deleting historical products.
                 product.category = categories["unisex"]
                 product.save(update_fields=["category"])
-            if not product.main_image:
+            if (
+                not product.main_image
+                or not product.main_image.storage.exists(product.main_image.name)
+            ):
                 self._attach(product, "main_image", STATIC / data["image"])
             for collection_slug in data["collections"]:
                 product.collections.add(collections[collection_slug])

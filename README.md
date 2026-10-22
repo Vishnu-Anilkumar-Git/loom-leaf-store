@@ -362,10 +362,12 @@ To create the test deployment:
 3. Render generates the Django secret and links `DATABASE_URL` to the managed test database.
    The build script installs requirements, runs `collectstatic`, and applies migrations;
    the start command runs Gunicorn. Confirm the service URL and `/` health check.
-4. In the Render service shell, create an admin account using `python manage.py createsuperuser`.
-   Do not run `seed_products` on the first pass unless you want the sample catalog populated;
-   it uses bundled sample images. Validate homepage, static assets, sign-in, catalog, and a
-   COD test order. Treat any test order and database contents as disposable.
+4. Create the admin account using Render's **One-Off Jobs** feature (if available on your
+   plan) with command `python manage.py createsuperuser`; if one-off jobs are unavailable,
+   pause here rather than putting a password in source code. The build automatically runs
+   the idempotent `seed_products --skip-demo-reviews` command, so the sample catalog appears
+   after the next deploy. Validate homepage, static assets, catalog, and a COD test order.
+   Treat test orders and database contents as disposable.
 5. To stop using the test, delete the test Blueprint resources in Render. Before any real
    store deployment, choose paid/reliable database and persistent media options, configure
    SMTP and the verified domain, rotate any credentials that were ever exposed, and test
