@@ -1,4 +1,6 @@
 Django>=6.0,<6.2
+gunicorn>=23.0,<24.0
+whitenoise>=6.8,<7.0
 Pillow>=11.0
 razorpay>=2.0
 python-dotenv>=1.0

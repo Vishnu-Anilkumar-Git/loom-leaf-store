@@ -1,0 +1,40 @@
+databases:
+  - name: loom-leaf-db
+    databaseName: loom_leaf
+    user: loom_leaf
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: loom-leaf-store
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --access-logfile - --error-logfile -
+    healthCheckPath: /
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: loom-leaf-db
+          property: connectionString
+      - key: DJANGO_ALLOWED_HOSTS
+        value: loom-leaf-store.onrender.com
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: https://loom-leaf-store.onrender.com
+      - key: SITE_URL
+        value: https://loom-leaf-store.onrender.com
+      - key: DJANGO_SECURE_SSL_REDIRECT
+        value: "True"
+      - key: DJANGO_HSTS_SECONDS
+        value: "0"
+      - key: RAZORPAY_KEY_ID
+        value: ""
+      - key: RAZORPAY_KEY_SECRET
+        value: ""
+      - key: DJANGO_EMAIL_BACKEND
+        value: django.core.mail.backends.console.EmailBackend
