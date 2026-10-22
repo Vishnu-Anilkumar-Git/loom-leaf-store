@@ -1,0 +1,188 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load dashboard_tags humanize %}
+
+{% block eyebrow %}Overview{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block page_actions %}
+  <div class="dash-filters__group" style="border:none;padding:0;background:transparent;">
+    {% include "dashboard/includes/range_filter.html" %}
+  </div>
+{% endblock %}
+
+{% block dash_content %}
+  <p class="dash-card__meta" style="margin:-0.5rem 0 1rem;">
+    Showing <strong>{{ range_label }}</strong> · revenue excludes cancelled and returned orders.
+  </p>
+
+  <!-- Key metrics -->
+  <section class="dash-grid dash-grid--metrics" aria-label="Store metrics">
+    <article class="dash-card">
+      <p class="dash-card__label">Total sales</p>
+      <p class="dash-card__value">₹{{ metrics.revenue|intcomma }}</p>
+      <p class="dash-card__meta">Avg order ₹{{ metrics.average_order|intcomma }}</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Orders</p>
+      <p class="dash-card__value">{{ metrics.order_count }}</p>
+      <p class="dash-card__meta">{{ pending_orders }} awaiting fulfilment</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Customers</p>
+      <p class="dash-card__value">{{ customers_total }}</p>
+      <p class="dash-card__meta">{{ customers_new }} joined {{ range_label|lower }}</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Products</p>
+      <p class="dash-card__value">{{ products_active }}</p>
+      <p class="dash-card__meta">{{ products_total }} in catalogue (incl. archived)</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Low stock</p>
+      <p class="dash-card__value">{{ low_stock_count }}</p>
+      <p class="dash-card__meta {% if low_stock_count or out_of_stock_count %}dash-card__meta--alert{% endif %}">
+        variants ≤ {{ low_threshold }} units · {{ out_of_stock_count }} out of stock
+      </p>
+    </article>
+  </section>
+
+  <div class="dash-grid dash-grid--two dash-section-gap">
+    <!-- Sales trend -->
+    <section class="dash-card dash-card--chart" aria-labelledby="trend-heading">
+      <div class="dash-card__head">
+        <div>
+          <p class="dash-card__label">Revenue over time</p>
+          <h2 class="dash-card__title" id="trend-heading">Sales trend — {{ range_label }}</h2>
+        </div>
+        <span class="dash-badge">Peak ₹{{ chart_peak|intcomma }}</span>
+      </div>
+      {% if chart %}
+        <div class="dash-chart__wrap">
+          <div class="dash-chart" role="img"
+               aria-label="Daily revenue from {{ chart_first_date|date:'d M Y' }} to {{ chart_last_date|date:'d M Y' }}">
+            {% for point in chart %}
+              <div class="dash-chart__bar {% if not point.height %}is-zero{% endif %}"
+                   style="height: {% if point.height %}{{ point.height }}{% else %}3{% endif %}%"
+                   title="{{ point.date }} — ₹{{ point.value|intcomma }}"></div>
+            {% endfor %}
+          </div>
+          <div class="dash-chart__legend">
+            <span>{{ chart_first_date|date:'d M' }}</span>
+            <span>{{ chart_last_date|date:'d M' }}</span>
+          </div>
+        </div>
+      {% else %}
+        <div class="dash-empty"><p>No sales in this range.</p></div>
+      {% endif %}
+    </section>
+
+    <!-- Inventory alerts -->
+    <section class="dash-card" aria-labelledby="alerts-heading">
+      <div class="dash-card__head">
+        <h2 class="dash-card__title" id="alerts-heading">Inventory alerts</h2>
+        <a class="dash-badge" href="{% url 'dashboard:inventory' %}">Open inventory</a>
+      </div>
+      {% if low_stock or out_of_stock_count %}
+        <ul class="dash-timeline">
+          {% for variant in low_stock %}
+            <li>
+              <strong>{{ variant.product.name }} · {{ variant.size.name }} · {{ variant.color.name }}</strong>
+              <span>{{ variant.stock }} left · SKU {{ variant.sku }}</span>
+            </li>
+          {% empty %}
+            <li><strong>Low stock</strong><span>None right now.</span></li>
+          {% endfor %}
+          {% if out_of_stock_count %}
+            <li>
+              <strong>{{ out_of_stock_count }} variants out of stock</strong>
+              <span><a href="{% url 'dashboard:inventory' %}?section=out">Review now</a></span>
+            </li>
+          {% endif %}
+        </ul>
+      {% else %}
+        <div class="dash-empty"><p>Stock levels look healthy.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="dash-grid dash-grid--two dash-section-gap">
+    <!-- Recent orders -->
+    <section class="dash-card" aria-labelledby="recent-heading">
+      <div class="dash-card__head">
+        <h2 class="dash-card__title" id="recent-heading">Recent orders</h2>
+        <a class="dash-badge" href="{% url 'dashboard:order_list' %}">All orders</a>
+      </div>
+      {% if recent_orders %}
+        <div class="dash-table-wrap" style="border:none;">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th scope="col">Order</th>
+                <th scope="col">Customer</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in recent_orders %}
+                <tr>
+                  <td>
+                    <a href="{% url 'dashboard:order_detail' order.order_number %}">{{ order.order_number }}</a>
+                    <span class="dash-sub">{{ order.created_at|date:'d M Y, H:i' }}</span>
+                  </td>
+                  <td>{{ order.full_name }}<span class="dash-sub">{{ order.get_payment_method_display }}</span></td>
+                  <td><span class="dash-badge">{{ order.get_status_display }}</span></td>
+                  <td class="num">₹{{ order.total_amount|intcomma }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="dash-empty"><p>No orders yet.</p></div>
+      {% endif %}
+    </section>
+
+    <!-- Best sellers -->
+    <section class="dash-card" aria-labelledby="top-heading">
+      <div class="dash-card__head">
+        <h2 class="dash-card__title" id="top-heading">Best sellers — {{ range_label }}</h2>
+        <a class="dash-badge" href="{% url 'dashboard:reports' %}?range={{ range_key }}">Reports</a>
+      </div>
+      {% if top_products %}
+        <div class="dash-table-wrap" style="border:none;">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th scope="col">Product</th>
+                <th scope="col" class="num">Units</th>
+                <th scope="col" class="num">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in top_products %}
+                <tr>
+                  <td>{{ row.product_name }}</td>
+                  <td class="num">{{ row.units }}</td>
+                  <td class="num">₹{{ row.revenue|intcomma }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="dash-empty"><p>No sales in this range yet.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+  {% if unapproved_reviews %}
+    <div class="dash-alert dash-alert--warn dash-section-gap">
+      <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+      <div>
+        {{ unapproved_reviews }} review{{ unapproved_reviews|pluralize }} waiting for moderation.
+        <a href="{% url 'admin:reviews_review_changelist' %}?is_approved__exact=0">Open in Django admin</a>.
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

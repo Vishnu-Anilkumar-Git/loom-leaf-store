@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Page not found — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell">
+  <div class="error-page">
+    <p class="eyebrow">Error 404</p>
+    <p class="error-page__code">404</p>
+    <h1>This page has moved on.</h1>
+    <p>The page you're looking for doesn't exist, or the piece may have sold out and been retired.</p>
+    <div class="error-page__actions">
+      <a href="{% url 'core:home' %}" class="btn-editorial btn-editorial--dark">Back to home</a>
+      <a href="{% url 'catalog:product_list' %}" class="text-link">Shop all pieces <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+  </div>
+</div>
+{% endblock %}

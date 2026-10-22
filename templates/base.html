@@ -1,0 +1,39 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}LOOM&amp;LEAF — Contemporary essentials{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}LOOM&amp;LEAF — designed for everyday, made to stand apart. Contemporary men’s and unisex clothing.{% endblock %}">
+  <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
+  <link rel="preload" href="{% static 'fonts/inter-var.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/instrument-serif.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}" data-page="{% block page_id %}store{% endblock %}">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  {% if site_settings.announcement_enabled %}
+    <div class="announcement" role="region" aria-label="Announcement">
+      <a href="{% url 'catalog:new_arrivals' %}">{{ site_settings.announcement_text }}</a>
+    </div>
+  {% endif %}
+
+  {% include "components/navbar.html" %}
+
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include "components/footer.html" %}
+  {% include "components/messages.html" %}
+
+  <script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

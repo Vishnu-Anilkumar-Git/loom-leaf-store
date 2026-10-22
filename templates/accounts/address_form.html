@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ heading }} — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="form-page">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span>
+      <a href="{% url 'accounts:profile' %}">Account</a><span aria-hidden="true">/</span><span aria-current="page">{{ heading }}</span>
+    </nav>
+    <p class="eyebrow">Delivery</p>
+    <h1 class="page-title">{{ heading }}</h1>
+
+    <form method="post" class="account-form account-form--narrow" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="inline-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="form-field">
+        <label class="form-label" for="{{ form.label.id_for_label }}">Label</label>
+        {{ form.label }}
+        {% for error in form.label.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label" for="{{ form.full_name.id_for_label }}">Full name</label>
+          {{ form.full_name }}
+          {% for error in form.full_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.phone.id_for_label }}">Phone</label>
+          {{ form.phone }}
+          {% for error in form.phone.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="{{ form.line1.id_for_label }}">Address line 1</label>
+        {{ form.line1 }}
+        {% for error in form.line1.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="{{ form.line2.id_for_label }}">Address line 2 <span>(optional)</span></label>
+        {{ form.line2 }}
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label" for="{{ form.city.id_for_label }}">City</label>
+          {{ form.city }}
+          {% for error in form.city.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.state.id_for_label }}">State</label>
+          {{ form.state }}
+          {% for error in form.state.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.postal_code.id_for_label }}">PIN code</label>
+          {{ form.postal_code }}
+          {% for error in form.postal_code.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+      <div class="form-check">
+        {{ form.is_default }}
+        <label class="form-check-label" for="{{ form.is_default.id_for_label }}">Set as default address</label>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-editorial btn-editorial--dark">Save address</button>
+        <a href="{% url 'accounts:profile' %}" class="text-link">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

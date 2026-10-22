@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title }} — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span><span aria-current="page">{{ page.title }}</span>
+    </nav>
+    <p class="eyebrow">LOOM&amp;LEAF / Information</p>
+    <h1 class="page-title">{{ page.title }}</h1>
+    {% if page.intro %}<p class="page-intro__description">{{ page.intro }}</p>{% endif %}
+  </div>
+
+  <div class="legal-layout">
+    <div class="legal-copy">
+      {{ page.body|linebreaks }}
+    </div>
+    <aside class="legal-aside">
+      <p class="meta-label">Need help?</p>
+      <a href="{% url 'core:contact' %}" class="text-link">Contact us <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+      <a href="{% url 'core:shipping_policy' %}">Shipping policy</a>
+      <a href="{% url 'core:returns_policy' %}">Returns &amp; exchanges</a>
+      <a href="{% url 'core:privacy_policy' %}">Privacy policy</a>
+      <a href="{% url 'core:terms' %}">Terms &amp; conditions</a>
+      <p class="legal-aside__updated">Last updated {{ page.updated_at|date:"j F Y" }}</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

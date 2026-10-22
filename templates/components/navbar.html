@@ -1,0 +1,134 @@
+{% load static %}
+<header class="site-header" id="site-header">
+  <div class="container-fluid shell site-header__inner">
+    <button class="icon-btn mobile-menu-btn" type="button" data-bs-toggle="offcanvas"
+            data-bs-target="#mobileNav" aria-controls="mobileNav" aria-label="Open menu">
+      <span class="menu-lines" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
+
+    <nav class="primary-nav" aria-label="Primary">
+      <a href="{% url 'catalog:men' %}" class="primary-nav__link {% if request.resolver_match.url_name == 'men' %}is-active{% endif %}">Men</a>
+      <a href="{% url 'catalog:unisex' %}" class="primary-nav__link {% if request.resolver_match.url_name == 'unisex' %}is-active{% endif %}">Unisex</a>
+      <a href="{% url 'catalog:new_arrivals' %}" class="primary-nav__link {% if request.resolver_match.url_name == 'new_arrivals' %}is-active{% endif %}">New Arrivals</a>
+      <a href="{% url 'catalog:collection_list' %}" class="primary-nav__link {% if 'collection' in request.resolver_match.url_name %}is-active{% endif %}">Collections</a>
+    </nav>
+
+    <a class="wordmark" href="{% url 'core:home' %}" aria-label="LOOM and LEAF home">
+      LOOM<span class="wordmark__amp">&amp;</span>LEAF
+    </a>
+
+    <div class="utility-nav">
+      <button type="button" class="utility-nav__item search-toggle" aria-expanded="false"
+              aria-controls="search-panel" data-search-toggle>
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <span class="utility-nav__label">Search</span>
+      </button>
+
+      {% if user.is_authenticated %}
+        <div class="dropdown">
+          <button class="utility-nav__item dropdown-toggle-no-caret" type="button" data-bs-toggle="dropdown"
+                  aria-expanded="false" aria-label="Account menu">
+            <i class="bi bi-person" aria-hidden="true"></i>
+            <span class="utility-nav__label">{{ user.get_short_name|default:user.get_username|truncatechars:10 }}</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end account-menu">
+            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">My account</a></li>
+            <li><a class="dropdown-item" href="{% url 'accounts:order_history' %}">Orders</a></li>
+            <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}">Change password</a></li>
+            {% if user.is_staff %}
+              <li><a class="dropdown-item" href="{% url 'dashboard:home' %}">Staff dashboard</a></li>
+              <li><a class="dropdown-item" href="{% url 'admin:index' %}">Django admin</a></li>
+            {% endif %}
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button class="dropdown-item" type="submit">Sign out</button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      {% else %}
+        <a class="utility-nav__item" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}" aria-label="Sign in">
+          <i class="bi bi-person" aria-hidden="true"></i>
+          <span class="utility-nav__label">Account</span>
+        </a>
+      {% endif %}
+
+      <a class="utility-nav__item utility-nav__wishlist" href="{% url 'wishlist:detail' %}" aria-label="Wishlist">
+        <i class="bi bi-heart" aria-hidden="true"></i>
+        <span class="utility-nav__label">Wishlist</span>
+        <span class="count-pill{% if not wishlist_count %} is-zero{% endif %}" data-wishlist-count>{{ wishlist_count }}</span>
+      </a>
+
+      <a class="utility-nav__item utility-nav__cart" href="{% url 'cart:detail' %}" aria-label="Shopping bag">
+        <i class="bi bi-bag" aria-hidden="true"></i>
+        <span class="utility-nav__label">Bag</span>
+        <span class="count-pill{% if not cart_count %} is-zero{% endif %}" data-cart-count>{{ cart_count }}</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="search-panel" id="search-panel" hidden>
+    <div class="container-fluid shell search-panel__inner">
+      <form action="{% url 'catalog:search' %}" method="get" role="search" class="search-panel__form">
+        <label class="visually-hidden" for="site-search">Search products</label>
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input id="site-search" type="search" name="q" placeholder="Search for pieces, categories or SKUs"
+               value="{{ request.GET.q|default:'' }}" autocomplete="off" data-search-input>
+        <button type="submit" class="search-panel__submit">Search</button>
+        <button type="button" class="search-panel__close" data-search-close aria-label="Close search">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </form>
+      <div class="search-panel__quick">
+        <span class="meta-label">Popular</span>
+        <a href="{% url 'catalog:new_arrivals' %}">New arrivals</a>
+        <a href="{% url 'catalog:men' %}">Men</a>
+        <a href="{% url 'catalog:unisex' %}">Unisex</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="offcanvas offcanvas-start mobile-nav" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+  <div class="offcanvas-header">
+    <span class="mobile-nav__brand" id="mobileNavLabel">LOOM<span class="wordmark__amp">&amp;</span>LEAF</span>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close menu"></button>
+  </div>
+  <div class="offcanvas-body mobile-nav__body">
+    <nav aria-label="Mobile navigation" class="mobile-nav__primary">
+      <a href="{% url 'catalog:men' %}">Men <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+      <a href="{% url 'catalog:unisex' %}">Unisex <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+      <a href="{% url 'catalog:new_arrivals' %}">New Arrivals <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+      <a href="{% url 'catalog:collection_list' %}">Collections <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+      <a href="{% url 'catalog:product_list' %}">Shop All <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+    </nav>
+
+    <div class="mobile-nav__secondary">
+      {% if user.is_authenticated %}
+        <a href="{% url 'accounts:profile' %}">My account</a>
+      {% else %}
+        <a href="{% url 'accounts:login' %}">Sign in</a>
+      {% endif %}
+      <a href="{% url 'wishlist:detail' %}">Wishlist ({{ wishlist_count }})</a>
+      <a href="{% url 'cart:detail' %}">Bag ({{ cart_count }})</a>
+      <a href="{% url 'core:contact' %}">Contact</a>
+      {% if user.is_staff %}
+        <a href="{% url 'dashboard:home' %}">Staff dashboard</a>
+      {% endif %}
+    </div>
+
+    <div class="mobile-nav__footer">
+      <form action="{% url 'newsletter:subscribe' %}" method="post" class="mobile-newsletter">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <label for="mobile-newsletter-email">Join the list</label>
+        <div class="input-group">
+          <input id="mobile-newsletter-email" type="email" name="email" placeholder="Email address" required>
+          <button type="submit" aria-label="Subscribe"><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

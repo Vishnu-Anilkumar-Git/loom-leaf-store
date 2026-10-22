@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Your bag — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro page-intro--compact">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span><span aria-current="page">Bag</span>
+    </nav>
+    <div class="page-intro__row">
+      <div>
+        <p class="eyebrow">Your selection</p>
+        <h1 class="page-title">Your bag</h1>
+      </div>
+      {% if cart %}<p class="page-intro__count">{{ cart.item_count }} item{{ cart.item_count|pluralize }}</p>{% endif %}
+    </div>
+  </div>
+
+  {% if cart and cart.items.exists %}
+    <div class="cart-layout">
+      <div class="cart-items">
+        {% if cart_issue %}
+          <div class="inline-alert inline-alert--warning" role="alert">
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+            <p>{{ cart_issue }} <a href="{% url 'cart:detail' %}">Review your bag</a> before checkout.</p>
+          </div>
+        {% endif %}
+        {% if coupon_error %}
+          <div class="inline-alert" role="alert">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <p>{{ coupon_error }} The coupon has been removed.</p>
+          </div>
+        {% endif %}
+
+        <div class="cart-items__head" aria-hidden="true">
+          <span>Piece</span><span>Quantity</span><span>Total</span>
+        </div>
+
+        {% for item in cart.items.all %}
+          <article class="cart-item">
+            <a href="{{ item.product.get_absolute_url }}" class="cart-item__media">
+              {% if item.product.main_image %}
+                <img src="{{ item.product.main_image.url }}" alt="{{ item.product.name }}" width="240" height="300" loading="lazy">
+              {% else %}
+                <img src="{% static 'images/placeholder.svg' %}" alt="{{ item.product.name }}" width="240" height="300" loading="lazy">
+              {% endif %}
+            </a>
+            <div class="cart-item__info">
+              <p class="eyebrow">{{ item.product.category.name }}</p>
+              <h2><a href="{{ item.product.get_absolute_url }}">{{ item.product.name }}</a></h2>
+              <p class="cart-item__variant">{{ item.variant.size.name }} / {{ item.variant.color.name }}</p>
+              <p class="cart-item__unit">₹{{ item.unit_price|floatformat:"-2"|intcomma }} each</p>
+              {% if item.variant.stock < 1 %}
+                <p class="cart-item__warning">No longer in stock — remove to continue.</p>
+              {% elif item.variant.stock < 5 %}
+                <p class="cart-item__warning">Only {{ item.variant.stock }} left in this size.</p>
+              {% endif %}
+            </div>
+            <div class="cart-item__qty">
+              <form method="post" action="{% url 'cart:update' item.id %}" class="cart-qty-form">
+                {% csrf_token %}
+                <label class="visually-hidden" for="qty-{{ item.id }}">Quantity for {{ item.product.name }}</label>
+                <input id="qty-{{ item.id }}" type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.variant.stock }}" inputmode="numeric">
+                <button type="submit">Update</button>
+              </form>
+              <form method="post" action="{% url 'cart:remove' item.id %}">
+                {% csrf_token %}
+                <button type="submit" class="cart-item__remove">Remove</button>
+              </form>
+            </div>
+            <p class="cart-item__total">₹{{ item.line_total|floatformat:"-2"|intcomma }}</p>
+          </article>
+        {% endfor %}
+
+        <div class="cart-actions">
+          <a href="{% url 'catalog:product_list' %}" class="text-link"><i class="bi bi-arrow-left" aria-hidden="true"></i> Continue shopping</a>
+        </div>
+      </div>
+
+      <aside class="cart-summary" aria-label="Order summary">
+        <h2>Order summary</h2>
+
+        {% if cart.coupon %}
+          <div class="coupon-applied">
+            <div>
+              <span class="meta-label">Coupon applied</span>
+              <strong>{{ cart.coupon.code }}</strong>
+              <span class="coupon-applied__note">{{ cart.coupon.description }}</span>
+            </div>
+            <form method="post" action="{% url 'cart:remove_coupon' %}">
+              {% csrf_token %}
+              <button type="submit" aria-label="Remove coupon"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            </form>
+          </div>
+        {% else %}
+          <form method="post" action="{% url 'cart:apply_coupon' %}" class="coupon-form">
+            {% csrf_token %}
+            <label for="coupon-code">Coupon code</label>
+            <div class="coupon-form__row">
+              <input id="coupon-code" type="text" name="code" placeholder="Add a code" autocomplete="off" required>
+              <button type="submit" class="btn-editorial btn-editorial--outline">Apply</button>
+            </div>
+          </form>
+        {% endif %}
+
+        <dl class="totals">
+          <div><dt>Subtotal</dt><dd>₹{{ subtotal|floatformat:"-2"|intcomma }}</dd></div>
+          {% if discount %}<div class="totals__discount"><dt>Discount</dt><dd>−₹{{ discount|floatformat:"-2"|intcomma }}</dd></div>{% endif %}
+          <div><dt>Shipping</dt><dd>{% if shipping %}₹{{ shipping|floatformat:"-2"|intcomma }}{% else %}<span class="text-success">Free</span>{% endif %}</dd></div>
+          <div class="totals__grand"><dt>Total</dt><dd>₹{{ total|floatformat:"-2"|intcomma }}</dd></div>
+        </dl>
+
+        {% if shipping and free_shipping_remaining %}
+          <p class="free-shipping-note">
+            Add ₹{{ free_shipping_remaining|floatformat:"-2"|intcomma }} for free shipping.
+          </p>
+        {% elif not shipping %}
+          <p class="free-shipping-note free-shipping-note--met"><i class="bi bi-check2" aria-hidden="true"></i> You've unlocked free shipping.</p>
+        {% endif %}
+
+        <a href="{% url 'orders:checkout' %}" class="btn-editorial btn-editorial--dark btn-block {% if cart_issue %}is-disabled{% endif %}" {% if cart_issue %}aria-disabled="true" tabindex="-1"{% endif %}>
+          Proceed to checkout <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </a>
+        <p class="cart-summary__note"><i class="bi bi-lock" aria-hidden="true"></i> Secure checkout · Cash on Delivery or Razorpay test mode</p>
+        <p class="cart-summary__note">Taxes included. Shipping calculated at checkout.</p>
+      </aside>
+    </div>
+  {% else %}
+    <div class="empty-state empty-state--cart">
+      <i class="bi bi-bag" aria-hidden="true"></i>
+      <p class="eyebrow">Your bag is empty</p>
+      <h2>Nothing in the bag — yet.</h2>
+      <p>Start with the pieces everyone reaches for first. New season is live now.</p>
+      <div class="empty-state__actions">
+        <a href="{% url 'catalog:new_arrivals' %}" class="btn-editorial btn-editorial--dark">Shop new arrivals</a>
+        <a href="{% url 'catalog:product_list' %}" class="text-link">Shop all pieces <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

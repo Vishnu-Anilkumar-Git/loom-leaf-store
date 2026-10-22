@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Wishlist — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro page-intro--compact">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span><span aria-current="page">Wishlist</span>
+    </nav>
+    <div class="page-intro__row">
+      <div>
+        <p class="eyebrow">Saved for later</p>
+        <h1 class="page-title">Wishlist</h1>
+      </div>
+      <p class="page-intro__count">{{ items|length }} piece{{ items|length|pluralize }}</p>
+    </div>
+  </div>
+
+  {% if items %}
+    <div class="wishlist-grid">
+      {% for item in items %}
+        <article class="wishlist-card">
+          <a href="{{ item.product.get_absolute_url }}" class="wishlist-card__media">
+            {% if item.product.main_image %}
+              <img src="{{ item.product.main_image.url }}" alt="{{ item.product.name }}" width="600" height="750" loading="lazy">
+            {% else %}
+              <img src="{% static 'images/placeholder.svg' %}" alt="{{ item.product.name }}" width="600" height="750" loading="lazy">
+            {% endif %}
+          </a>
+          <div class="wishlist-card__body">
+            <div class="wishlist-card__top">
+              <div>
+                <p class="eyebrow">{{ item.product.category.name }}</p>
+                <h2><a href="{{ item.product.get_absolute_url }}">{{ item.product.name }}</a></h2>
+              </div>
+              <form method="post" action="{% url 'wishlist:toggle' item.product.slug %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'wishlist:detail' %}">
+                <button type="submit" class="wishlist-card__remove" aria-label="Remove {{ item.product.name }} from wishlist">
+                  <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+              </form>
+            </div>
+            <p class="price">
+              <span class="price__current">₹{{ item.product.price|floatformat:"-2"|intcomma }}</span>
+              {% if item.product.has_sale %}<s class="price__was">₹{{ item.product.base_price|floatformat:"-2"|intcomma }}</s>{% endif %}
+            </p>
+
+            {% if item.product.in_stock %}
+              <form method="post" action="{% url 'cart:add' item.product.slug %}" class="wishlist-add">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'wishlist:detail' %}">
+                <label class="visually-hidden" for="wishlist-size-{{ item.id }}">Size</label>
+                <select id="wishlist-size-{{ item.id }}" name="size" required>
+                  {% for size in item.product.size_list %}
+                    <option value="{{ size.code }}">{{ size.name }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn-editorial btn-editorial--dark">Add to bag</button>
+              </form>
+            {% else %}
+              <p class="wishlist-card__soldout">Sold out — check back soon</p>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <i class="bi bi-heart" aria-hidden="true"></i>
+      <p class="eyebrow">Your wishlist is empty</p>
+      <h2>Save what you love.</h2>
+      <p>Tap the heart on any piece to keep it here while you decide.</p>
+      <a href="{% url 'catalog:product_list' %}" class="btn-editorial btn-editorial--dark">Explore the collection</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

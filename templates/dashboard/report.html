@@ -1,0 +1,143 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load dashboard_tags humanize %}
+
+{% block eyebrow %}Analytics{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block page_actions %}
+  <div class="dash-range" role="group" aria-label="Export">
+    <a href="{% url 'dashboard:export_csv' %}?kind=orders&range={{ range_key }}{% if request.GET.from %}&from={{ request.GET.from }}{% endif %}{% if request.GET.to %}&to={{ request.GET.to }}{% endif %}">
+      <i class="bi bi-download" aria-hidden="true"></i> Orders CSV
+    </a>
+    <form method="get" action="{% url 'dashboard:export_csv' %}" class="dash-export-day">
+      <label class="visually-hidden" for="export-day">Order export day</label>
+      <input id="export-day" type="date" name="day" value="{{ today|date:'Y-m-d' }}">
+      <button type="submit" name="kind" value="pdf">Daily PDF</button>
+      <button type="submit" name="kind" value="xlsx">Daily Excel</button>
+    </form>
+    <a href="{% url 'dashboard:export_csv' %}?kind=products">
+      <i class="bi bi-download" aria-hidden="true"></i> Products CSV
+    </a>
+    <a href="{% url 'dashboard:export_csv' %}?kind=coupons">
+      <i class="bi bi-download" aria-hidden="true"></i> Coupons CSV
+    </a>
+  </div>
+{% endblock %}
+
+{% block dash_content %}
+  <div class="dash-filters">
+    {% include "dashboard/includes/range_filter.html" %}
+  </div>
+
+  <p class="dash-card__meta" style="margin:-0.4rem 0 1rem;">
+    Period: <strong>{{ range_label }}</strong> · revenue excludes cancelled and returned orders.
+  </p>
+
+  <section class="dash-grid dash-grid--metrics" aria-label="Sales summary">
+    <article class="dash-card">
+      <p class="dash-card__label">Revenue</p>
+      <p class="dash-card__value">₹{{ metrics.revenue|intcomma }}</p>
+      <p class="dash-card__meta">across {{ metrics.order_count }} order{{ metrics.order_count|pluralize }}</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Average order</p>
+      <p class="dash-card__value">₹{{ metrics.average_order|intcomma }}</p>
+      <p class="dash-card__meta">net of discounts</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Discounts given</p>
+      <p class="dash-card__value">₹{{ metrics.discount|intcomma }}</p>
+      <p class="dash-card__meta">coupon savings in period</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Inventory value</p>
+      <p class="dash-card__value">₹{{ inventory_value|intcomma }}</p>
+      <p class="dash-card__meta">stock × current price</p>
+    </article>
+  </section>
+
+  <div class="dash-grid dash-grid--two dash-section-gap">
+    <section class="dash-card" aria-label="Order status breakdown">
+      <div class="dash-card__head"><h2 class="dash-card__title">Orders by status</h2></div>
+      <table class="dash-table">
+        <tbody>
+          {% for row in status_rows %}
+            <tr>
+              <td>{{ row.label }}</td>
+              <td class="num">{{ row.count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="dash-card" aria-label="Best selling products">
+      <div class="dash-card__head"><h2 class="dash-card__title">Best sellers</h2></div>
+      {% if top_products %}
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th scope="col">Product</th>
+              <th scope="col" class="num">Units</th>
+              <th scope="col" class="num">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in top_products %}
+              <tr>
+                <td>{{ row.product_name }}</td>
+                <td class="num">{{ row.units }}</td>
+                <td class="num">₹{{ row.revenue|intcomma }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="dash-empty"><p>No sales in this period.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="dash-grid dash-grid--two dash-section-gap">
+    <section class="dash-card" aria-label="Discount usage">
+      <div class="dash-card__head"><h2 class="dash-card__title">Discount usage</h2></div>
+      {% if discount_rows %}
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th scope="col">Code</th>
+              <th scope="col" class="num">Redemptions</th>
+              <th scope="col" class="num">Discount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in discount_rows %}
+              <tr>
+                <td>{{ row.coupon__code }}</td>
+                <td class="num">{{ row.used }}</td>
+                <td class="num">₹{{ row.discount|default_if_none:0|intcomma }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="dash-empty"><p>No coupons were used in this period.</p></div>
+      {% endif %}
+    </section>
+
+    <section class="dash-card" aria-label="Catalogue and account totals">
+      <div class="dash-card__head"><h2 class="dash-card__title">Store totals</h2></div>
+      <dl class="dash-dl">
+        <dt>Products</dt><dd>{{ totals.products }} ({{ inventory_total }} active variants)</dd>
+        <dt>Out of stock</dt><dd>{{ out_of_stock }} variant{{ out_of_stock|pluralize }}</dd>
+        <dt>Low stock</dt><dd>{{ low_stock }} variant{{ low_stock|pluralize }} at ≤ 5 units</dd>
+        <dt>Customers</dt><dd>{{ totals.customers }}</dd>
+        <dt>Reviews</dt>
+        <dd>
+          {{ totals.reviews }} total
+          {% if totals.reviews_pending %} · {{ totals.reviews_pending }} awaiting moderation{% endif %}
+        </dd>
+      </dl>
+    </section>
+  </div>
+{% endblock %}

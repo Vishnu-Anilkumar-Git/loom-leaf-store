@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}My account — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro page-intro--compact">
+    <p class="eyebrow">Account</p>
+    <h1 class="page-title">Hello, {{ user.get_short_name|default:user.get_username }}.</h1>
+    <p class="page-intro__description">Manage your details, saved addresses and recent orders.</p>
+  </div>
+
+  <div class="account-layout">
+    <aside class="account-nav" aria-label="Account navigation">
+      <a href="{% url 'accounts:profile' %}" class="is-active">Profile</a>
+      <a href="{% url 'accounts:order_history' %}">Orders</a>
+      <a href="{% url 'wishlist:detail' %}">Wishlist <span>{{ wishlist_count }}</span></a>
+      <a href="{% url 'accounts:password_change' %}">Password</a>
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit">Sign out</button>
+      </form>
+    </aside>
+
+    <div class="account-content">
+      <section class="account-section" aria-labelledby="details-heading">
+        <div class="account-section__head">
+          <div>
+            <p class="meta-label">Personal details</p>
+            <h2 id="details-heading">Your details</h2>
+          </div>
+        </div>
+        <form method="post" class="account-form" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="inline-alert" role="alert">{{ form.non_field_errors }}</div>
+          {% endif %}
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
+              {{ form.first_name }}
+              {% for error in form.first_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+              {{ form.last_name }}
+              {% for error in form.last_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+              {{ form.email }}
+              {% for error in form.email.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="{{ form.phone.id_for_label }}">Phone</label>
+              {{ form.phone }}
+              {% for error in form.phone.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            </div>
+          </div>
+          <div class="form-check">
+            {{ form.marketing_opt_in }}
+            <label class="form-check-label" for="{{ form.marketing_opt_in.id_for_label }}">{{ form.marketing_opt_in.label }}</label>
+          </div>
+          <button type="submit" class="btn-editorial btn-editorial--dark">Save changes</button>
+        </form>
+      </section>
+
+      <section class="account-section" aria-labelledby="addresses-heading">
+        <div class="account-section__head">
+          <div>
+            <p class="meta-label">Delivery</p>
+            <h2 id="addresses-heading">Saved addresses</h2>
+          </div>
+          <a href="{% url 'accounts:address_create' %}" class="text-link">Add address <i class="bi bi-plus-lg" aria-hidden="true"></i></a>
+        </div>
+        {% if addresses %}
+          <div class="address-grid">
+            {% for address in addresses %}
+              <div class="address-card">
+                <div class="address-card__head">
+                  <span class="meta-label">{{ address.label }}</span>
+                  {% if address.is_default %}<span class="badge-label">Default</span>{% endif %}
+                </div>
+                <p><strong>{{ address.full_name }}</strong><br>{{ address.line1 }}{% if address.line2 %}<br>{{ address.line2 }}{% endif %}<br>{{ address.city }}, {{ address.state }} {{ address.postal_code }}<br>{{ address.phone }}</p>
+                <div class="address-card__actions">
+                  <a href="{% url 'accounts:address_edit' address.pk %}">Edit</a>
+                  <form method="post" action="{% url 'accounts:address_delete' address.pk %}" data-confirm="Remove this address?">
+                    {% csrf_token %}
+                    <button type="submit">Remove</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">No saved addresses yet. Add one to speed up checkout.</p>
+        {% endif %}
+      </section>
+
+      <section class="account-section" aria-labelledby="recent-orders-heading">
+        <div class="account-section__head">
+          <div>
+            <p class="meta-label">History</p>
+            <h2 id="recent-orders-heading">Recent orders</h2>
+          </div>
+          <a href="{% url 'accounts:order_history' %}" class="text-link">All orders <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        {% if recent_orders %}
+          <div class="order-mini-list">
+            {% for order in recent_orders %}
+              <a href="{{ order.get_absolute_url }}" class="order-mini">
+                <div>
+                  <span class="order-mini__number">{{ order.order_number }}</span>
+                  <span class="order-mini__date">{{ order.created_at|date:"j M Y" }}</span>
+                </div>
+                <div class="order-mini__meta">
+                  <span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span>
+                  <span>₹{{ order.total_amount|floatformat:"-2"|intcomma }}</span>
+                  <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">No orders yet. <a href="{% url 'catalog:product_list' %}">Start shopping</a>.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

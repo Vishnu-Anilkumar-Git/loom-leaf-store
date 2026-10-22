@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sign in — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="auth-layout">
+  <div class="auth-media">
+    <img src="{% static 'images/hero-model.jpg' %}" alt="LOOM&amp;LEAF campaign portrait" width="1200" height="1500">
+    <div class="auth-media__overlay">
+      <p class="eyebrow eyebrow--light">LOOM&amp;LEAF</p>
+      <p>Your pieces, your orders, your wishlist — in one place.</p>
+    </div>
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-panel__inner">
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span><span aria-current="page">Sign in</span>
+      </nav>
+      <p class="eyebrow">Welcome back</p>
+      <h1 class="auth-title">Sign in</h1>
+      <p class="auth-subtitle">Access your orders, saved addresses and wishlist.</p>
+
+      <form method="post" class="auth-form" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="inline-alert" role="alert">
+            <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+            <p>Those credentials don't match an account. Please try again.</p>
+          </div>
+        {% endif %}
+
+        <div class="form-field">
+          <label class="form-label" for="{{ form.username.id_for_label }}">Username or email</label>
+          {{ form.username }}
+          {% for error in form.username.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+          {{ form.password }}
+          {% for error in form.password.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <p class="auth-switch"><a href="{% url 'accounts:password_reset' %}">Forgot your password?</a></p>
+
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <button type="submit" class="btn-editorial btn-editorial--dark btn-block">Sign in <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+      </form>
+
+      <p class="auth-switch">New to LOOM&amp;LEAF? <a href="{% url 'accounts:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a></p>
+      <p class="auth-fineprint">Protected by Django's password hashing and CSRF protection. This demonstration store never stores plaintext passwords.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

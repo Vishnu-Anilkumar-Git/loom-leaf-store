@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}LOOM&amp;LEAF — Designed for everyday. Made to stand apart.{% endblock %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container-fluid shell">
+    <div class="hero__top">
+      <p class="eyebrow">{{ site_settings.hero_slogan }}</p>
+      <p class="hero__collection-label">{{ site_settings.hero_collection_label }}</p>
+    </div>
+
+    <h1 class="hero__wordmark" id="hero-title">LOOM<span class="wordmark__amp">&amp;</span>LEAF</h1>
+
+    <div class="hero__stage">
+      <div class="hero__copy">
+        <p class="hero__lead">Modern menswear, cut with intention. Refined layers, considered fabrics, and effortless confidence for every day.</p>
+        <div class="hero__actions">
+          <a href="{% url 'catalog:product_list' %}" class="btn-editorial btn-editorial--dark">Shop now <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+          <a href="{% url 'catalog:new_arrivals' %}" class="text-link">Explore new in <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+        </div>
+        <p class="hero__supporting">{{ site_settings.hero_supporting_copy }}</p>
+      </div>
+
+      <figure class="hero__media">
+        <img src="{% static 'images/hero-menswear.jpg' %}" alt="Man in a tailored navy suit, LOOM&amp;LEAF menswear campaign" width="1200" height="1500">
+        <figcaption>Campaign 01 / The Modern Man</figcaption>
+      </figure>
+
+      <div class="hero__aside" aria-hidden="true">
+        <span>Est. 2026</span>
+        <span class="hero__aside-line"></span>
+        <span>Modern Menswear</span>
+      </div>
+    </div>
+
+    <div class="hero__foot">
+      <span>01 — The modern man</span>
+      <span class="hero__scroll">Scroll to discover <i class="bi bi-arrow-down" aria-hidden="true"></i></span>
+      <span>Designed for him. Made to last.</span>
+    </div>
+  </div>
+</section>
+
+
+<section class="editorial-section" aria-labelledby="editorial-heading">
+  <div class="container-fluid shell">
+    <div class="editorial-section__grid">
+      <div class="editorial-section__copy">
+        <p class="eyebrow">New season</p>
+        <h2 id="editorial-heading" class="display-heading">Quiet<br><em>confidence</em></h2>
+        <p class="editorial-section__text">
+          A considered wardrobe of easy tailoring, tactile layers and versatile
+          essentials. Thoughtfully made to move from weekday to weekend.
+        </p>
+        <a href="{% if editorial_collection %}{{ editorial_collection.get_absolute_url }}{% else %}{% url 'catalog:new_arrivals' %}{% endif %}" class="btn-editorial btn-editorial--dark">
+          Explore collection <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+      <figure class="editorial-section__media">
+        <img src="{% static 'images/hero-menswear.jpg' %}" alt="Modern men's tailoring from the LOOM&amp;LEAF campaign" loading="lazy" width="1200" height="1500">
+        <figcaption>
+          <span>LOOK 01</span>
+          <span>Modern tailoring, made for every day.</span>
+        </figcaption>
+      </figure>
+      <p class="editorial-section__vertical" aria-hidden="true">The new essentials — Autumn / Winter 2026</p>
+    </div>
+  </div>
+</section>
+
+<section class="benefits" aria-label="Store benefits">
+  <div class="container-fluid shell">
+    <div class="benefits__grid">
+      <div class="benefit">
+        <i class="bi bi-truck" aria-hidden="true"></i>
+        <div><h3>Fast delivery</h3><p>Dispatch in 2–4 business days.</p></div>
+      </div>
+      <div class="benefit">
+        <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+        <div><h3>Easy returns</h3><p>7-day returns on unused pieces.</p></div>
+      </div>
+      <div class="benefit">
+        <i class="bi bi-patch-check" aria-hidden="true"></i>
+        <div><h3>Quality assured</h3><p>Carefully selected fabrics and make.</p></div>
+      </div>
+      <div class="benefit">
+        <i class="bi bi-shield-lock" aria-hidden="true"></i>
+        <div><h3>Secure payment</h3><p>COD or verified Razorpay checkout.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="product-section" aria-labelledby="best-of-heading">
+  <div class="container-fluid shell">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">The collection</p>
+        <h2 id="best-of-heading" class="section-heading__title">Essential menswear</h2>
+      </div>
+      <a href="{% url 'catalog:product_list' %}" class="text-link">View all <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+
+    {% if best_of_products %}
+      <div class="product-grid">
+        {% for product in best_of_products %}
+          {% include "components/product_card.html" with product=product %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="eyebrow">Catalogue</p>
+        <h3>No pieces yet</h3>
+        <p>Run <code>python manage.py seed_products</code> to load the demonstration collection, or add products in the admin.</p>
+        <a href="{% url 'admin:index' %}" class="btn-editorial btn-editorial--dark">Open admin</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="collection-banners" aria-labelledby="collections-heading">
+  <div class="container-fluid shell">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Curated</p>
+        <h2 id="collections-heading" class="section-heading__title">Made for your everyday</h2>
+      </div>
+      <a href="{% url 'catalog:collection_list' %}" class="text-link">All collections <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+    <div class="collection-banners__grid">
+      {% for collection in collections|slice:":2" %}
+        <article class="collection-banner">
+          <a href="{{ collection.get_absolute_url }}" class="collection-banner__media">
+            {% if collection.image %}
+              <img src="{{ collection.image.url }}" alt="{{ collection.name }}" loading="lazy" width="1400" height="900">
+            {% else %}
+              <img src="{% static 'images/placeholder.svg' %}" alt="{{ collection.name }}" loading="lazy" width="1400" height="900">
+            {% endif %}
+          </a>
+          <div class="collection-banner__body">
+            <div>
+              <p class="eyebrow">Collection 0{{ forloop.counter }}</p>
+              <h3>{{ collection.name }}</h3>
+              <p>{{ collection.description }}</p>
+            </div>
+            <a href="{{ collection.get_absolute_url }}" class="circle-link" aria-label="Shop {{ collection.name }}">
+              <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+            </a>
+          </div>
+        </article>
+      {% empty %}
+        <article class="collection-banner collection-banner--placeholder">
+          <div class="collection-banner__body">
+            <div><p class="eyebrow">Everyday essentials</p><h3>The quiet wardrobe</h3><p>Core pieces, considered.</p></div>
+            <a href="{% url 'catalog:product_list' %}" class="circle-link" aria-label="Shop all"><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+          </div>
+        </article>
+        <article class="collection-banner collection-banner--placeholder">
+          <div class="collection-banner__body">
+            <div><p class="eyebrow">Elevated streetwear</p><h3>Relaxed, refined</h3><p>Street shapes with a tailored edge.</p></div>
+            <a href="{% url 'catalog:product_list' %}" class="circle-link" aria-label="Shop all"><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="newsletter-section" aria-labelledby="newsletter-heading">
+  <div class="container-fluid shell">
+    <div class="newsletter-section__grid">
+      <div>
+        <p class="eyebrow eyebrow--light">The LOOM&amp;LEAF list</p>
+        <h2 id="newsletter-heading" class="newsletter-section__title">Wear the<br><em>next season</em> first.</h2>
+      </div>
+      <div class="newsletter-section__form">
+        <p>New arrivals, editorial notes and occasional private previews. One considered email, never more.</p>
+        <form action="{% url 'newsletter:subscribe' %}" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <label class="visually-hidden" for="home-newsletter-email">Email address</label>
+          <div class="newsletter-input">
+            <input id="home-newsletter-email" type="email" name="email" placeholder="Your email address" required autocomplete="email">
+            <button type="submit">Subscribe <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+          </div>
+        </form>
+        <p class="newsletter-section__fineprint">By subscribing you agree to our <a href="{% url 'core:privacy_policy' %}">privacy policy</a>. Unsubscribe at any time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

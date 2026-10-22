@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Contact — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro page-intro--compact">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span><span aria-current="page">Contact</span>
+    </nav>
+    <p class="eyebrow">We're listening</p>
+    <h1 class="page-title">Contact</h1>
+    <p class="page-intro__description">Questions about an order, a fit or a return? Send a note and we'll reply within two business days.</p>
+  </div>
+
+  <div class="contact-layout">
+    <div class="contact-form-wrap">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="inline-alert" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+            {{ form.name }}
+            {% for error in form.name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+            {{ form.email }}
+            {% for error in form.email.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.subject.id_for_label }}">Subject</label>
+          {{ form.subject }}
+          {% for error in form.subject.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.message.id_for_label }}">Message</label>
+          {{ form.message }}
+          {% for error in form.message.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <button type="submit" class="btn-editorial btn-editorial--dark">Send message <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+      </form>
+    </div>
+
+    <aside class="contact-aside">
+      <div class="contact-block">
+        <p class="meta-label">Email</p>
+        <a href="mailto:{{ site_settings.contact_email }}">{{ site_settings.contact_email }}</a>
+        <p>{{ site_settings.support_hours }}</p>
+      </div>
+      <div class="contact-block">
+        <p class="meta-label">Order help</p>
+        <p>Include your order number (starts with <code>LL-</code>) so we can find it quickly. Signed-in customers can also view orders in their account.</p>
+        <a href="{% url 'accounts:order_history' %}" class="text-link">Order history <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+      </div>
+      <div class="contact-block">
+        <p class="meta-label">Policies</p>
+        <a href="{% url 'core:shipping_policy' %}">Shipping</a>
+        <a href="{% url 'core:returns_policy' %}">Returns</a>
+        <a href="{% url 'core:privacy_policy' %}">Privacy</a>
+      </div>
+      <p class="contact-disclaimer">LOOM&amp;LEAF is a demonstration store. No physical address or phone line is published, and messages are stored locally.</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

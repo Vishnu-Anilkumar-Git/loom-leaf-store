@@ -1,0 +1,44 @@
+{% load static humanize %}
+<article class="product-card" data-product-card>
+  <div class="product-card__media">
+    <a href="{{ product.get_absolute_url }}" class="product-card__image-link" aria-label="View {{ product.name }}">
+      {% if product.main_image %}
+        <img src="{{ product.main_image.url }}" alt="{{ product.name }}" loading="lazy" width="600" height="750">
+      {% else %}
+        <img src="{% static 'images/placeholder.svg' %}" alt="{{ product.name }}" loading="lazy" width="600" height="750">
+      {% endif %}
+    </a>
+    <div class="product-card__badges">
+      {% if product.is_new_arrival %}<span class="badge-label">New</span>{% endif %}
+      {% if product.has_sale %}<span class="badge-label badge-label--sale">−{{ product.discount_percent }}%</span>{% endif %}
+      {% if not product.in_stock %}<span class="badge-label badge-label--muted">Sold out</span>{% endif %}
+    </div>
+    <form action="{% url 'wishlist:toggle' product.slug %}" method="post" class="wishlist-form" data-wishlist-form>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <button type="submit" class="wishlist-toggle{% if product.id in wishlist_ids %} is-saved{% endif %}"
+              data-wishlist-toggle data-product-id="{{ product.id }}"
+              aria-pressed="{% if product.id in wishlist_ids %}true{% else %}false{% endif %}"
+              aria-label="{% if product.id in wishlist_ids %}Remove {{ product.name }} from wishlist{% else %}Save {{ product.name }} to wishlist{% endif %}">
+        <i class="bi bi-heart{% if product.id in wishlist_ids %}-fill{% endif %}" aria-hidden="true"></i>
+      </button>
+    </form>
+  </div>
+  <div class="product-card__body">
+    <div class="product-card__meta">
+      <span>{{ product.category.name }}</span>
+      {% if product.rating_total %}
+        <span class="product-card__rating"><i class="bi bi-star-fill" aria-hidden="true"></i> {{ product.rating_avg|floatformat:1 }} ({{ product.rating_total }})</span>
+      {% endif %}
+    </div>
+    <h3 class="product-card__title"><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
+    <p class="product-card__colors">
+      {% for color in product.color_list|slice:":3" %}{{ color.name }}{% if not forloop.last %} / {% endif %}{% endfor %}
+      {% if product.color_list|length > 3 %}<span>+{{ product.color_list|length|add:"-3" }}</span>{% endif %}
+    </p>
+    <p class="price">
+      <span class="price__current">₹{{ product.price|floatformat:"-2"|intcomma }}</span>
+      {% if product.has_sale %}<s class="price__was">₹{{ product.base_price|floatformat:"-2"|intcomma }}</s>{% endif %}
+    </p>
+  </div>
+</article>

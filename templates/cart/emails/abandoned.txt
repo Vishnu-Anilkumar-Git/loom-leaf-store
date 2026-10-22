@@ -1,0 +1,9 @@
+Hello {{ user.get_short_name|default:user.get_username }},
+
+You left a few pieces in your bag at {{ site_name }}. They are still waiting for you:
+{% for item in cart.items.all %}- {{ item.product.name }} × {{ item.quantity }}
+{% endfor %}
+
+Continue shopping and checkout: {{ checkout_url }}
+
+If you have already completed your purchase, please ignore this email.

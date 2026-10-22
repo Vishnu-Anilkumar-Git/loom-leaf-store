@@ -1,0 +1,153 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block eyebrow %}Catalogue{% endblock %}
+{% block page_title %}{% if is_create %}Add product{% else %}{{ product.name }}{% endif %}{% endblock %}
+
+{% block page_actions %}
+  <a class="dash-btn dash-btn--light" href="{% url 'dashboard:product_list' %}">← All products</a>
+  {% if not is_create and product %}
+    <a class="dash-btn dash-btn--light" href="{{ product.get_absolute_url }}" target="_blank" rel="noopener">
+      View in store
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block dash_content %}
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors or formset.non_form_errors %}
+      <div class="dash-alert dash-alert--danger">
+        <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+        <ul class="dash-errors">
+          {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+          {% for error in formset.non_form_errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="dash-grid dash-grid--two">
+      <section class="dash-card" aria-label="Product details">
+        <div class="dash-card__head"><h2 class="dash-card__title">Product details</h2></div>
+
+        {% for field in form %}
+          {% if field.name != 'is_active' and field.name != 'is_featured' and field.name != 'is_new_arrival' and field.name != 'collections' %}
+            <label class="dash-field" for="{{ field.id_for_label }}">
+              <span class="dash-field__label">{{ field.label }}{% if field.field.required %} *{% endif %}</span>
+              {{ field }}
+              {% if field.help_text %}<span class="dash-field__help">{{ field.help_text }}</span>{% endif %}
+              {% if field.errors %}
+                <ul class="dash-errors">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+              {% endif %}
+            </label>
+          {% endif %}
+        {% endfor %}
+      </section>
+
+      <div class="dash-stack">
+        <section class="dash-card" aria-label="Merchandising">
+          <div class="dash-card__head"><h2 class="dash-card__title">Merchandising</h2></div>
+
+          <label class="dash-field">
+            <span class="dash-field__label">Collections</span>
+            {{ form.collections }}
+            {% if form.collections.errors %}
+              <ul class="dash-errors">{% for error in form.collections.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+            {% endif %}
+          </label>
+
+          <div class="dash-field">
+            <span class="dash-field__label">Visibility</span>
+            <div class="dash-row-actions">
+              <label class="dash-badge"><input class="dash-check" type="checkbox" name="is_active"
+                     {% if form.is_active.value %}checked{% endif %}> Active</label>
+              <label class="dash-badge"><input class="dash-check" type="checkbox" name="is_featured"
+                     {% if form.is_featured.value %}checked{% endif %}> Featured</label>
+              <label class="dash-badge"><input class="dash-check" type="checkbox" name="is_new_arrival"
+                     {% if form.is_new_arrival.value %}checked{% endif %}> New arrival</label>
+            </div>
+            {% for error in form.is_active.errors %}<ul class="dash-errors"><li>{{ error }}</li></ul>{% endfor %}
+          </div>
+
+          {% if not is_create and product %}
+            <div class="dash-field">
+              <span class="dash-field__label">Stock</span>
+              <p class="dash-card__meta">
+                {{ product.stock_total }} unit{{ product.stock_total|pluralize }} across
+                {{ product.variants.count }} variant{{ product.variants.count|pluralize }}.
+                <a href="{% url 'dashboard:inventory' %}?q={{ product.name|urlencode }}">Manage inventory →</a>
+              </p>
+            </div>
+          {% endif %}
+        </section>
+      </div>
+    </div>
+
+    <!-- Variants: size / colour inventory -->
+    <section class="dash-card dash-section-gap" aria-label="Size and colour variants">
+      <div class="dash-card__head">
+        <h2 class="dash-card__title">Variants — size &amp; colour stock</h2>
+        <span class="dash-badge">Stock lives on variants</span>
+      </div>
+
+      {{ formset.management_form }}
+      <div class="dash-table-wrap" style="border:none;">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th scope="col">Size</th>
+              <th scope="col">Colour</th>
+              <th scope="col">SKU</th>
+              <th scope="col">Stock</th>
+              <th scope="col">Selling</th>
+              <th scope="col">Remove</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for variant_form in formset %}
+              <tr {% if variant_form.DELETE.value %}style="opacity:0.5"{% endif %}>
+                {% for hidden in variant_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <td>
+                  {{ variant_form.size }}
+                  {% for error in variant_form.size.errors %}<ul class="dash-errors"><li>{{ error }}</li></ul>{% endfor %}
+                </td>
+                <td>
+                  {{ variant_form.color }}
+                  {% for error in variant_form.color.errors %}<ul class="dash-errors"><li>{{ error }}</li></ul>{% endfor %}
+                </td>
+                <td>
+                  {{ variant_form.sku }}
+                  {% for error in variant_form.sku.errors %}<ul class="dash-errors"><li>{{ error }}</li></ul>{% endfor %}
+                </td>
+                <td>
+                  {{ variant_form.stock }}
+                  {% for error in variant_form.stock.errors %}<ul class="dash-errors"><li>{{ error }}</li></ul>{% endfor %}
+                </td>
+                <td>{{ variant_form.is_active }}</td>
+                <td>
+                  {% if variant_form.instance.pk %}
+                    <label class="dash-badge dash-badge--danger">
+                      {{ variant_form.DELETE }} Delete
+                    </label>
+                  {% else %}
+                    <span class="dash-sub">new</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% for error in formset.non_form_errors %}<ul class="dash-errors"><li>{{ error }}</li></ul>{% endfor %}
+      <p class="dash-field__help">Two empty rows are provided to add combinations; leave them blank to ignore.</p>
+    </section>
+
+    <div class="dash-form-actions">
+      <button class="dash-btn" type="submit">
+        <i class="bi bi-check-lg" aria-hidden="true"></i>
+        {% if is_create %}Create product{% else %}Save changes{% endif %}
+      </button>
+      <a class="dash-btn dash-btn--light" href="{% url 'dashboard:product_list' %}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

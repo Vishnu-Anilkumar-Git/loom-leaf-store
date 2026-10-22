@@ -1,0 +1,94 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}{{ page_title }}{% endblock %} — LOOM&amp;LEAF staff</title>
+  <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="dash-body" data-page="dashboard">
+  <a class="skip-link" href="#dash-main">Skip to content</a>
+
+  <div class="dash-shell">
+    <header class="dash-topbar">
+      <a class="dash-topbar__brand" href="{% url 'dashboard:home' %}">
+        LOOM<span>&amp;</span>LEAF <em>Staff</em>
+      </a>
+
+      <button class="dash-nav-toggle" type="button" data-dash-nav-toggle
+              aria-expanded="false" aria-controls="dash-nav" aria-label="Toggle dashboard menu">
+        <i class="bi bi-list" aria-hidden="true"></i>
+      </button>
+
+      <div class="dash-topbar__actions">
+        <a class="dash-topbar__store" href="{% url 'core:home' %}">
+          <i class="bi bi-arrow-up-right" aria-hidden="true"></i> View store
+        </a>
+        {% if user.is_superuser %}
+          <a class="dash-topbar__store" href="{% url 'admin:index' %}">
+            <i class="bi bi-gear" aria-hidden="true"></i> Django admin
+          </a>
+        {% endif %}
+        <div class="dash-topbar__user">
+          <i class="bi bi-person-circle" aria-hidden="true"></i>
+          <span>{{ user.get_short_name|default:user.get_username }}</span>
+        </div>
+        <form method="post" action="{% url 'accounts:logout' %}" class="dash-logout">
+          {% csrf_token %}
+          <button type="submit" class="dash-btn dash-btn--ghost">Sign out</button>
+        </form>
+      </div>
+    </header>
+
+    <nav class="dash-nav" id="dash-nav" aria-label="Dashboard navigation">
+      <a href="{% url 'dashboard:home' %}" class="dash-nav__link {% if nav_section == 'home' %}is-active{% endif %}">
+        <i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard
+      </a>
+      <a href="{% url 'dashboard:product_list' %}" class="dash-nav__link {% if nav_section == 'products' %}is-active{% endif %}">
+        <i class="bi bi-tag" aria-hidden="true"></i> Products
+      </a>
+      <a href="{% url 'dashboard:inventory' %}" class="dash-nav__link {% if nav_section == 'inventory' %}is-active{% endif %}">
+        <i class="bi bi-box-seam" aria-hidden="true"></i> Inventory
+      </a>
+      <a href="{% url 'dashboard:order_list' %}" class="dash-nav__link {% if nav_section == 'orders' %}is-active{% endif %}">
+        <i class="bi bi-receipt" aria-hidden="true"></i> Orders
+      </a>
+      <a href="{% url 'dashboard:customer_list' %}" class="dash-nav__link {% if nav_section == 'customers' %}is-active{% endif %}">
+        <i class="bi bi-people" aria-hidden="true"></i> Customers
+      </a>
+      <a href="{% url 'dashboard:coupon_list' %}" class="dash-nav__link {% if nav_section == 'promotions' %}is-active{% endif %}">
+        <i class="bi bi-ticket-percent" aria-hidden="true"></i> Promotions
+      </a>
+      <a href="{% url 'dashboard:reports' %}" class="dash-nav__link {% if nav_section == 'reports' %}is-active{% endif %}">
+        <i class="bi bi-bar-chart" aria-hidden="true"></i> Reports
+      </a>
+    </nav>
+
+    <main class="dash-main" id="dash-main">
+      <div class="dash-page-head">
+        <div>
+          <p class="dash-eyebrow">{% block eyebrow %}Staff dashboard{% endblock %}</p>
+          <h1 class="dash-title">{% block page_title %}{{ page_title }}{% endblock %}</h1>
+        </div>
+        <div class="dash-page-head__actions">{% block page_actions %}{% endblock %}</div>
+      </div>
+
+      {% include "components/messages.html" %}
+
+      {% block dash_content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+  <script src="{% static 'js/dashboard.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

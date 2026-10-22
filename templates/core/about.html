@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<section class="about-hero">
+  <div class="container-fluid shell">
+    <div class="about-hero__grid">
+      <div>
+        <p class="eyebrow">Our point of view</p>
+        <h1 class="display-heading display-heading--about">Less,<br><em>but better.</em></h1>
+        <p class="about-hero__lead">Clothes for real days: considered shapes, honest fabric, a palette that stays quiet.</p>
+      </div>
+      <figure class="about-hero__media">
+        <img src="{% static 'images/editorial-portrait.jpg' %}" alt="LOOM&amp;LEAF editorial portrait" width="1200" height="1500">
+      </figure>
+    </div>
+  </div>
+</section>
+
+<div class="container-fluid shell page-shell">
+  <div class="legal-layout">
+    <div class="legal-copy">
+      {% if page %}
+        {{ page.body|linebreaks }}
+      {% else %}
+        <p>LOOM&amp;LEAF is a demonstration storefront built with Django, designed to show a complete, working shopping experience in a premium editorial visual language.</p>
+      {% endif %}
+    </div>
+    <aside class="legal-aside">
+      <p class="meta-label">Collections</p>
+      <a href="{% url 'catalog:collection_list' %}">View all collections <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+      <a href="{% url 'catalog:new_arrivals' %}">New arrivals</a>
+      <a href="{% url 'core:contact' %}">Contact</a>
+    </aside>
+  </div>
+</div>
+{% endblock %}

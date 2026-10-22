@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Collections — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span><span aria-current="page">Collections</span>
+    </nav>
+    <p class="eyebrow">The LOOM&amp;LEAF edits</p>
+    <h1 class="page-title page-title--display">Collections</h1>
+  </div>
+
+  <div class="editorial-collections">
+    {% for collection in collections %}
+      <article class="editorial-collection">
+        <a href="{{ collection.get_absolute_url }}" class="editorial-collection__media">
+          {% if collection.image %}
+            <img src="{{ collection.image.url }}" alt="{{ collection.name }}" width="1400" height="900" loading="lazy">
+          {% else %}
+            <img src="{% static 'images/placeholder.svg' %}" alt="{{ collection.name }}" width="1400" height="900" loading="lazy">
+          {% endif %}
+        </a>
+        <div class="editorial-collection__body">
+          <div>
+            <p class="eyebrow">{{ collection.product_count }} piece{{ collection.product_count|pluralize }}</p>
+            <h2>{{ collection.name }}</h2>
+            <p>{{ collection.description }}</p>
+          </div>
+          <a href="{{ collection.get_absolute_url }}" class="circle-link" aria-label="Shop {{ collection.name }}">
+            <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+          </a>
+        </div>
+      </article>
+    {% empty %}
+      <div class="empty-state">
+        <h2>No collections published</h2>
+        <a href="{% url 'catalog:product_list' %}" class="btn-editorial btn-editorial--dark">Shop all products</a>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

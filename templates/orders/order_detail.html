@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Order {{ order.order_number }} — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro page-intro--compact">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span>
+      <a href="{% url 'accounts:order_history' %}">Orders</a><span aria-hidden="true">/</span>
+      <span aria-current="page">{{ order.order_number }}</span>
+    </nav>
+    <div class="order-heading">
+      <div>
+        <p class="eyebrow">Order {{ order.order_number }}</p>
+        <h1 class="page-title">Thank you{% if order.full_name %}, {{ order.full_name }}{% endif %}.</h1>
+        <p class="page-intro__description">
+          Placed {{ order.created_at|date:"j F Y, H:i" }} ·
+          {{ order.item_count }} item{{ order.item_count|pluralize }} ·
+          ₹{{ order.total_amount|floatformat:"-2"|intcomma }}
+        </p>
+      </div>
+      <div class="order-status-stack">
+        <span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span>
+        <span class="payment-badge payment-badge--{{ order.payment_status }}">{{ order.get_payment_status_display }}</span>
+      </div>
+    </div>
+  </div>
+
+  {% if order.status == 'cancelled' %}
+    <div class="inline-alert inline-alert--warning" role="status">
+      <i class="bi bi-x-circle" aria-hidden="true"></i>
+      <p>This order has been cancelled and the stock has been released. No payment is due.</p>
+    </div>
+  {% elif order.status == 'returned' %}
+    <div class="inline-alert" role="status">
+      <i class="bi bi-arrow-return-left" aria-hidden="true"></i>
+      <p>This order has been marked as returned.</p>
+    </div>
+  {% elif order.payment_method == 'razorpay' and order.payment_status != 'paid' %}
+    <div class="inline-alert inline-alert--warning" role="status">
+      <i class="bi bi-credit-card" aria-hidden="true"></i>
+      <p>
+        Payment is pending for this order. Stock is reserved while you complete payment.
+        <a href="{% url 'orders:payment' order.order_number %}">Complete payment</a>.
+      </p>
+    </div>
+  {% endif %}
+
+  <div class="order-layout">
+    <div class="order-main">
+      <section class="order-section" aria-labelledby="tracking-heading">
+        <div class="order-section__head">
+          <h2 id="tracking-heading">Tracking</h2>
+          {% if order.status != 'cancelled' and order.status != 'returned' %}
+            <span class="meta-label">Updated {{ order.updated_at|date:"j M, H:i" }}</span>
+          {% endif %}
+        </div>
+        {% if order.status == 'cancelled' %}
+          <p class="muted">This order was cancelled. If you were charged by mistake, contact support — this demo does not process refunds.</p>
+        {% elif order.status == 'returned' %}
+          <p class="muted">This order was returned. Refunds are not processed by this demonstration store.</p>
+        {% else %}
+          <ol class="tracking">
+            {% for step in progress_steps %}
+              <li class="tracking__step{% if step.done %} is-done{% endif %}{% if step.current %} is-current{% endif %}">
+                <span class="tracking__marker" aria-hidden="true">{% if step.done %}<i class="bi bi-check2"></i>{% endif %}</span>
+                <span class="tracking__label">{{ step.label }}</span>
+              </li>
+            {% endfor %}
+          </ol>
+          <p class="tracking__note">Tracking reflects administrator status updates. No courier integration is configured in this demo.</p>
+        {% endif %}
+      </section>
+
+      <section class="order-section" aria-labelledby="items-heading">
+        <div class="order-section__head">
+          <h2 id="items-heading">Items</h2>
+          <span class="meta-label">{{ order.item_count }} item{{ order.item_count|pluralize }}</span>
+        </div>
+        <div class="order-items">
+          {% for item in order.items.all %}
+            <article class="order-item">
+              <div class="order-item__media">
+                {% if item.product and item.product.main_image %}
+                  <img src="{{ item.product.main_image.url }}" alt="{{ item.product_name }}" width="160" height="200" loading="lazy">
+                {% else %}
+                  <img src="{% static 'images/placeholder.svg' %}" alt="{{ item.product_name }}" width="160" height="200" loading="lazy">
+                {% endif %}
+              </div>
+              <div class="order-item__info">
+                <p class="eyebrow">{{ item.sku }}</p>
+                <h3>{% if item.product %}<a href="{{ item.product.get_absolute_url }}">{{ item.product_name }}</a>{% else %}{{ item.product_name }}{% endif %}</h3>
+                <p>{{ item.size }} / {{ item.color }} · Qty {{ item.quantity }}</p>
+              </div>
+              <div class="order-item__price">
+                <span>₹{{ item.unit_price|floatformat:"-2"|intcomma }} each</span>
+                <strong>₹{{ item.line_total|floatformat:"-2"|intcomma }}</strong>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="order-section" aria-labelledby="timeline-heading">
+        <div class="order-section__head">
+          <h2 id="timeline-heading">Status history</h2>
+        </div>
+        <ol class="status-history">
+          {% for event in order.status_history.all %}
+            <li>
+              <span class="status-history__dot" aria-hidden="true"></span>
+              <div>
+                <strong>{{ event.get_status_display }}</strong>
+                <time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:"j M Y, H:i" }}</time>
+                {% if event.note %}<p>{{ event.note }}</p>{% endif %}
+              </div>
+            </li>
+          {% empty %}
+            <li><div><strong>Order placed</strong><p>{{ order.created_at|date:"j M Y, H:i" }}</p></div></li>
+          {% endfor %}
+        </ol>
+      </section>
+    </div>
+
+    <aside class="order-summary" aria-label="Order summary">
+      <div class="order-summary__block">
+        <h2>Delivery</h2>
+        <address>
+          {{ order.full_name }}<br>
+          {{ order.address_line1 }}{% if order.address_line2 %}<br>{{ order.address_line2 }}{% endif %}<br>
+          {{ order.city }}, {{ order.state }} {{ order.postal_code }}<br>
+          {{ order.phone }}<br>
+          {{ order.email }}
+        </address>
+        {% if order.delivery_instructions %}
+          <p class="order-summary__note"><span class="meta-label">Notes</span>{{ order.delivery_instructions }}</p>
+        {% endif %}
+      </div>
+
+      <div class="order-summary__block">
+        <h2>Payment</h2>
+        <p>{{ order.get_payment_method_display }}</p>
+        <p class="order-summary__note">Status: <strong>{{ order.get_payment_status_display }}</strong></p>
+        {% if order.payment_method == 'razorpay' and latest_payment and latest_payment.provider_payment_id %}
+          <p class="order-summary__note">Reference: {{ latest_payment.provider_payment_id }}</p>
+        {% endif %}
+      </div>
+
+      <div class="order-summary__block">
+        <h2>Total</h2>
+        <dl class="totals">
+          <div><dt>Subtotal</dt><dd>₹{{ order.subtotal|floatformat:"-2"|intcomma }}</dd></div>
+          {% if order.discount_amount %}
+            <div class="totals__discount"><dt>Discount{% if order.coupon_code %} ({{ order.coupon_code }}){% endif %}</dt><dd>−₹{{ order.discount_amount|floatformat:"-2"|intcomma }}</dd></div>
+          {% endif %}
+          <div><dt>Shipping</dt><dd>{% if order.shipping_amount %}₹{{ order.shipping_amount|floatformat:"-2"|intcomma }}{% else %}Free{% endif %}</dd></div>
+          <div class="totals__grand"><dt>Paid / payable</dt><dd>₹{{ order.total_amount|floatformat:"-2"|intcomma }}</dd></div>
+        </dl>
+      </div>
+
+      <div class="order-actions">
+        <a href="{% url 'catalog:product_list' %}" class="btn-editorial btn-editorial--outline btn-block">Continue shopping</a>
+        {% if order.payment_method == 'razorpay' and order.payment_status != 'paid' and order.status != 'cancelled' %}
+          <a href="{% url 'orders:payment' order.order_number %}" class="btn-editorial btn-editorial--dark btn-block">Complete payment</a>
+        {% endif %}
+        {% if can_cancel %}
+          <form method="post" action="{% url 'orders:cancel' order.order_number %}" data-confirm="Cancel this order? Reserved stock will be released.">
+            {% csrf_token %}
+            <button type="submit" class="order-cancel">Cancel order</button>
+          </form>
+        {% endif %}
+        <a href="{% url 'core:contact' %}" class="text-link order-actions__help">Need help? Contact us</a>
+      </div>
+
+      <p class="order-disclaimer">This is a demonstration order. No goods will be shipped and no real charge will be collected.</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

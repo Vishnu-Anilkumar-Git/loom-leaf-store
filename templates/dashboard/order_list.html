@@ -1,0 +1,101 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load dashboard_tags humanize %}
+
+{% block eyebrow %}Fulfilment{% endblock %}
+{% block page_title %}Orders{% endblock %}
+
+{% block page_actions %}
+  {% include "dashboard/includes/range_filter.html" %}
+{% endblock %}
+
+{% block dash_content %}
+  <form method="get" class="dash-filters" aria-label="Order filters">
+    <div class="dash-search">
+      <label class="visually-hidden" for="order-q">Search orders</label>
+      <input class="dash-input" type="search" id="order-q" name="q" value="{{ query }}"
+             placeholder="Order number, customer, email or phone…">
+      <button class="dash-btn dash-btn--light" type="submit">Search</button>
+    </div>
+
+    <div class="dash-filters__field">
+      <label for="order-status">Fulfilment</label>
+      <select class="dash-input dash-input--sm" id="order-status" name="status">
+        <option value="">All statuses</option>
+        {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="dash-filters__field">
+      <label for="order-payment">Payment</label>
+      <select class="dash-input dash-input--sm" id="order-payment" name="payment">
+        <option value="">Any payment</option>
+        {% for value, label in payment_choices %}
+          <option value="{{ value }}" {% if payment == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="dash-filters__field">
+      <label for="order-method">Method</label>
+      <select class="dash-input dash-input--sm" id="order-method" name="method">
+        <option value="">Any method</option>
+        {% for value, label in method_choices %}
+          <option value="{{ value }}" {% if method == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  {% if page.object_list %}
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th scope="col">Order</th>
+            <th scope="col">Customer</th>
+            <th scope="col">Items</th>
+            <th scope="col">Payment</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in page.object_list %}
+            <tr>
+              <td>
+                <a href="{% url 'dashboard:order_detail' order.order_number %}">{{ order.order_number }}</a>
+                <span class="dash-sub">{{ order.created_at|date:'d M Y, H:i' }} · {{ range_label }}</span>
+              </td>
+              <td>
+                {{ order.full_name }}
+                <span class="dash-sub">{{ order.email }}</span>
+              </td>
+              <td>{{ order.item_count }} <span class="dash-sub">{{ order.get_payment_method_display }}</span></td>
+              <td>
+                {% if order.payment_status == 'paid' %}
+                  <span class="dash-badge dash-badge--ok">Paid</span>
+                {% elif order.payment_status == 'failed' %}
+                  <span class="dash-badge dash-badge--danger">Failed</span>
+                {% elif order.payment_status == 'refunded' %}
+                  <span class="dash-badge dash-badge--warn">Refunded</span>
+                {% else %}
+                  <span class="dash-badge">Pending</span>
+                {% endif %}
+              </td>
+              <td><span class="dash-badge {% if order.status == 'delivered' %}dash-badge--ok{% elif order.status == 'cancelled' or order.status == 'returned' %}dash-badge--danger{% elif order.status == 'pending' %}dash-badge--warn{% endif %}">{{ order.get_status_display }}</span></td>
+              <td class="num">₹{{ order.total_amount|intcomma }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "dashboard/includes/pagination.html" %}
+  {% else %}
+    <div class="dash-empty">
+      <p>No orders match these filters.</p>
+      <a class="dash-btn dash-btn--light" href="{% url 'dashboard:order_list' %}">Clear filters</a>
+    </div>
+  {% endif %}
+{% endblock %}

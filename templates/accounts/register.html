@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create account — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="auth-layout auth-layout--reverse">
+  <div class="auth-media">
+    <img src="{% static 'images/category-women.jpg' %}" alt="LOOM&amp;LEAF editorial campaign" width="1200" height="1500">
+    <div class="auth-media__overlay">
+      <p class="eyebrow eyebrow--light">Members first</p>
+      <p>Save favourites, track orders and check out faster.</p>
+    </div>
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-panel__inner auth-panel__inner--wide">
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span><span aria-current="page">Create account</span>
+      </nav>
+      <p class="eyebrow">Join the list</p>
+      <h1 class="auth-title">Create account</h1>
+      <p class="auth-subtitle">One account for orders, addresses and saved pieces.</p>
+
+      <form method="post" class="auth-form" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="inline-alert" role="alert">
+            <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+            <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+          </div>
+        {% endif %}
+
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
+            {{ form.first_name }}
+            {% for error in form.first_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+            {{ form.last_name }}
+            {% for error in form.last_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+          {{ form.username }}
+          {% for error in form.username.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+          {{ form.email }}
+          {% for error in form.email.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.password1.id_for_label }}">Password</label>
+          {{ form.password1 }}
+          {% for error in form.password1.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          <p class="form-hint">At least 8 characters. Avoid common or entirely numeric passwords.</p>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+          {{ form.password2 }}
+          {% for error in form.password2.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="form-check">
+          {{ form.marketing_opt_in }}
+          <label class="form-check-label" for="{{ form.marketing_opt_in.id_for_label }}">{{ form.marketing_opt_in.label }}</label>
+        </div>
+
+        <button type="submit" class="btn-editorial btn-editorial--dark btn-block">Create account <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        <p class="auth-fineprint">By creating an account you agree to our <a href="{% url 'core:terms' %}">terms</a> and <a href="{% url 'core:privacy_policy' %}">privacy policy</a>.</p>
+      </form>
+
+      <p class="auth-switch">Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

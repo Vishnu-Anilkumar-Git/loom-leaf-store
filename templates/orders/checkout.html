@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Checkout — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro page-intro--compact">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'cart:detail' %}">Bag</a><span aria-hidden="true">/</span><span aria-current="page">Checkout</span>
+    </nav>
+    <div class="page-intro__row">
+      <div>
+        <p class="eyebrow">Final step</p>
+        <h1 class="page-title">Checkout</h1>
+      </div>
+      <p class="page-intro__count">Secure · CSRF protected</p>
+    </div>
+  </div>
+
+  <form method="post" class="checkout-layout" novalidate>
+    {% csrf_token %}
+    {{ form.checkout_token }}
+
+    <div class="checkout-main">
+      {% if form.non_field_errors %}
+        <div class="inline-alert inline-alert--warning" role="alert">
+          <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+          <div>{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        </div>
+      {% endif %}
+
+      <section class="checkout-section" aria-labelledby="contact-heading">
+        <div class="checkout-section__head">
+          <span class="checkout-step">01</span>
+          <h2 id="contact-heading">Contact</h2>
+          <a href="{% url 'accounts:profile' %}" class="text-link">Edit account</a>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label" for="{{ form.full_name.id_for_label }}">Full name</label>
+            {{ form.full_name }}
+            {% for error in form.full_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+            {{ form.email }}
+            {% for error in form.email.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.phone.id_for_label }}">Phone</label>
+          {{ form.phone }}
+          {% for error in form.phone.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+      </section>
+
+      <section class="checkout-section" aria-labelledby="delivery-heading">
+        <div class="checkout-section__head">
+          <span class="checkout-step">02</span>
+          <h2 id="delivery-heading">Delivery address</h2>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.address_line1.id_for_label }}">Address line 1</label>
+          {{ form.address_line1 }}
+          {% for error in form.address_line1.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.address_line2.id_for_label }}">Address line 2 <span>(optional)</span></label>
+          {{ form.address_line2 }}
+        </div>
+        <div class="form-row form-row--3">
+          <div class="form-field">
+            <label class="form-label" for="{{ form.city.id_for_label }}">City</label>
+            {{ form.city }}
+            {% for error in form.city.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="{{ form.state.id_for_label }}">State</label>
+            {{ form.state }}
+            {% for error in form.state.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="{{ form.postal_code.id_for_label }}">PIN code</label>
+            {{ form.postal_code }}
+            {% for error in form.postal_code.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="{{ form.delivery_instructions.id_for_label }}">Delivery notes <span>(optional)</span></label>
+          {{ form.delivery_instructions }}
+        </div>
+        <div class="form-check">
+          {{ form.save_address }}
+          <label class="form-check-label" for="{{ form.save_address.id_for_label }}">{{ form.save_address.label }}</label>
+        </div>
+      </section>
+
+      <section class="checkout-section" aria-labelledby="payment-heading">
+        <div class="checkout-section__head">
+          <span class="checkout-step">03</span>
+          <h2 id="payment-heading">Payment</h2>
+        </div>
+        {% for error in form.payment_method.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+        <div class="payment-options">
+          <label class="payment-option">
+            <input type="radio" name="payment_method" value="cod"
+                   {% if form.payment_method.value != 'razorpay' %}checked{% endif %}>
+            <span class="payment-option__body">
+              <span class="payment-option__title">Cash on Delivery <i class="bi bi-cash-coin" aria-hidden="true"></i></span>
+              <span class="payment-option__copy">Pay the courier when your order arrives. Available on demonstration orders.</span>
+            </span>
+          </label>
+          <label class="payment-option{% if not razorpay_available %} is-disabled{% endif %}">
+            <input type="radio" name="payment_method" value="razorpay"
+                   {% if form.payment_method.value == 'razorpay' %}checked{% endif %}
+                   {% if not razorpay_available %}disabled{% endif %}>
+            <span class="payment-option__body">
+              <span class="payment-option__title">Razorpay — Test mode <i class="bi bi-credit-card" aria-hidden="true"></i></span>
+              <span class="payment-option__copy">
+                {% if razorpay_available %}
+                  Pay securely with UPI, cards or netbanking using Razorpay test credentials.
+                {% else %}
+                  Not configured on this installation. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to .env to enable.
+                {% endif %}
+              </span>
+            </span>
+          </label>
+        </div>
+        <p class="checkout-secure"><i class="bi bi-shield-lock" aria-hidden="true"></i> Totals and stock are verified on the server before your order is created.</p>
+      </section>
+    </div>
+
+    <aside class="checkout-summary" aria-label="Order summary">
+      <h2>Your order</h2>
+      <div class="checkout-summary__items">
+        {% for item in cart.items.all %}
+          <div class="checkout-summary__item">
+            <div class="checkout-summary__thumb">
+              {% if item.product.main_image %}
+                <img src="{{ item.product.main_image.url }}" alt="" width="120" height="150" loading="lazy">
+              {% else %}
+                <img src="{% static 'images/placeholder.svg' %}" alt="" width="120" height="150" loading="lazy">
+              {% endif %}
+              <span>{{ item.quantity }}</span>
+            </div>
+            <div>
+              <p>{{ item.product.name }}</p>
+              <span>{{ item.variant.size.name }} / {{ item.variant.color.name }}</span>
+            </div>
+            <strong>₹{{ item.line_total|floatformat:"-2"|intcomma }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if cart.coupon %}
+        <div class="coupon-applied coupon-applied--compact">
+          <div><span class="meta-label">Coupon</span><strong>{{ cart.coupon.code }}</strong></div>
+          <a href="{% url 'cart:detail' %}" class="text-link">Change</a>
+        </div>
+      {% endif %}
+
+      <dl class="totals">
+        <div><dt>Subtotal</dt><dd>₹{{ totals.subtotal|floatformat:"-2"|intcomma }}</dd></div>
+        {% if totals.discount %}<div class="totals__discount"><dt>Discount</dt><dd>−₹{{ totals.discount|floatformat:"-2"|intcomma }}</dd></div>{% endif %}
+        <div><dt>Shipping</dt><dd>{% if totals.shipping %}₹{{ totals.shipping|floatformat:"-2"|intcomma }}{% else %}Free{% endif %}</dd></div>
+        <div class="totals__grand"><dt>Total</dt><dd>₹{{ totals.total|floatformat:"-2"|intcomma }}</dd></div>
+      </dl>
+
+      <button type="submit" class="btn-editorial btn-editorial--dark btn-block">
+        Place order <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      </button>
+      <p class="checkout-summary__fineprint">By placing this order you agree to the <a href="{% url 'core:terms' %}">terms</a> and <a href="{% url 'core:returns_policy' %}">returns policy</a>. No real goods are shipped.</p>
+      <a href="{% url 'cart:detail' %}" class="text-link checkout-summary__back"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to bag</a>
+    </aside>
+  </form>
+</div>
+{% endblock %}

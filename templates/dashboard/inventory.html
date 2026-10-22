@@ -1,0 +1,108 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load dashboard_tags %}
+
+{% block eyebrow %}Stock control{% endblock %}
+{% block page_title %}Inventory{% endblock %}
+
+{% block page_actions %}
+  <a class="dash-btn dash-btn--light" href="{% url 'dashboard:product_list' %}">Products</a>
+  <a class="dash-btn" href="{% url 'dashboard:product_create' %}">Add product</a>
+{% endblock %}
+
+{% block dash_content %}
+  <section class="dash-grid dash-grid--metrics" aria-label="Inventory summary">
+    <article class="dash-card">
+      <p class="dash-card__label">Active variants</p>
+      <p class="dash-card__value">{{ stats.total }}</p>
+      <p class="dash-card__meta">size × colour combinations</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Low stock</p>
+      <p class="dash-card__value">{{ stats.low }}</p>
+      <p class="dash-card__meta {% if stats.low %}dash-card__meta--alert{% endif %}">5 units or fewer</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Out of stock</p>
+      <p class="dash-card__value">{{ stats.out }}</p>
+      <p class="dash-card__meta {% if stats.out %}dash-card__meta--alert{% endif %}">variants at zero</p>
+    </article>
+  </section>
+
+  <form method="get" class="dash-filters dash-section-gap" aria-label="Inventory filters">
+    <div class="dash-search">
+      <label class="visually-hidden" for="inv-q">Search inventory</label>
+      <input class="dash-input" type="search" id="inv-q" name="q" value="{{ query }}"
+             placeholder="Search product, variant SKU or colour…">
+      <button class="dash-btn dash-btn--light" type="submit">Search</button>
+    </div>
+    <div class="dash-filters__field">
+      <label for="inv-section">Show</label>
+      <select class="dash-input dash-input--sm" id="inv-section" name="section">
+        <option value="all" {% if section == 'all' %}selected{% endif %}>All variants</option>
+        <option value="low" {% if section == 'low' %}selected{% endif %}>Low stock</option>
+        <option value="out" {% if section == 'out' %}selected{% endif %}>Out of stock</option>
+        <option value="inactive" {% if section == 'inactive' %}selected{% endif %}>Not selling</option>
+      </select>
+    </div>
+  </form>
+
+  {% if page.object_list %}
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th scope="col">Product</th>
+            <th scope="col">Size</th>
+            <th scope="col">Colour</th>
+            <th scope="col">Variant SKU</th>
+            <th scope="col">Stock</th>
+            <th scope="col">Selling</th>
+            <th scope="col">Save</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for variant in page.object_list %}
+            <tr>
+              <td>
+                <a href="{% url 'dashboard:product_edit' variant.product.pk %}">{{ variant.product.name }}</a>
+                <span class="dash-sub">{{ variant.product.category.name }}</span>
+              </td>
+              <td>{{ variant.size.name }}</td>
+              <td>{{ variant.color.name }}</td>
+              <td>{{ variant.sku }}</td>
+              <td>
+                {% if variant.stock == 0 %}
+                  <span class="dash-badge dash-badge--danger">Out of stock</span>
+                {% elif variant.stock <= 5 %}
+                  <span class="dash-badge dash-badge--warn">{{ variant.stock }} left</span>
+                {% else %}
+                  {{ variant.stock }}
+                {% endif %}
+              </td>
+              <td>{% if variant.is_active %}<span class="dash-badge dash-badge--ok">Yes</span>{% else %}<span class="dash-badge">Paused</span>{% endif %}</td>
+              <td>
+                <form method="post" action="{% url 'dashboard:inventory_update' variant.pk %}" class="dash-inline-form">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <label class="visually-hidden" for="stock-{{ variant.pk }}">Stock for {{ variant.product.name }} {{ variant.size.name }} {{ variant.color.name }}</label>
+                  <input class="dash-input dash-input--sm stock-input" type="number" min="0" id="stock-{{ variant.pk }}"
+                         name="stock" value="{{ variant.stock }}" style="width:5.5rem;">
+                  <label class="dash-badge" title="Currently selling">
+                    <input class="dash-check" type="checkbox" name="is_active" {% if variant.is_active %}checked{% endif %}> On
+                  </label>
+                  <button class="dash-btn dash-btn--sm dash-btn--light" type="submit">Update</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "dashboard/includes/pagination.html" %}
+  {% else %}
+    <div class="dash-empty">
+      <p>No variants match these filters.</p>
+      <a class="dash-btn dash-btn--light" href="{% url 'dashboard:inventory' %}">Clear filters</a>
+    </div>
+  {% endif %}
+{% endblock %}

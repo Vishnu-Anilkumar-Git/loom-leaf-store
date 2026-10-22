@@ -1,0 +1,7 @@
+Hello {{ order.full_name }},
+
+Your order {{ order.order_number }} has been marked delivered. We hope you love your purchase!
+
+View your order: {{ site_url }}{{ order.get_absolute_url }}
+
+Thank you for shopping with {{ site_name }}.

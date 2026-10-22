@@ -1,0 +1,94 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load humanize %}
+
+{% block eyebrow %}Marketing{% endblock %}
+{% block page_title %}{% if is_create %}Create coupon{% else %}{{ coupon.code }}{% endif %}{% endblock %}
+
+{% block page_actions %}
+  <a class="dash-btn dash-btn--light" href="{% url 'dashboard:coupon_list' %}">← All promotions</a>
+{% endblock %}
+
+{% block dash_content %}
+  <div class="dash-grid dash-grid--two">
+    <section class="dash-card" aria-label="Coupon form">
+      <div class="dash-card__head"><h2 class="dash-card__title">{% if is_create %}New coupon{% else %}Edit coupon{% endif %}</h2></div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="dash-alert dash-alert--danger">
+            <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+            <ul class="dash-errors">
+              {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        {% for field in form %}
+          <label class="dash-field" for="{{ field.id_for_label }}">
+            <span class="dash-field__label">{{ field.label }}{% if field.field.required %} *{% endif %}</span>
+            {{ field }}
+            {% if field.help_text %}<span class="dash-field__help">{{ field.help_text }}</span>{% endif %}
+            {% if field.errors %}
+              <ul class="dash-errors">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+            {% endif %}
+          </label>
+        {% endfor %}
+
+        <div class="dash-form-actions">
+          <button class="dash-btn" type="submit">
+            {% if is_create %}Create coupon{% else %}Save changes{% endif %}
+          </button>
+          <a class="dash-btn dash-btn--light" href="{% url 'dashboard:coupon_list' %}">Cancel</a>
+        </div>
+      </form>
+    </section>
+
+    {% if not is_create %}
+      <section class="dash-card" aria-label="Redemptions">
+        <div class="dash-card__head">
+          <h2 class="dash-card__title">Redemptions</h2>
+          <span class="dash-badge">{{ coupon.times_used }} recorded</span>
+        </div>
+        <dl class="dash-dl">
+          <dt>Times used</dt><dd>{{ coupon.times_used }}{% if coupon.usage_limit %} of {{ coupon.usage_limit }}{% endif %}</dd>
+          <dt>Per customer</dt><dd>{{ coupon.per_customer_limit }} redemption{{ coupon.per_customer_limit|pluralize }}</dd>
+          <dt>State</dt>
+          <dd>
+            {% if not coupon.is_active %}Deactivated
+            {% elif coupon.is_live %}Live now
+            {% elif coupon.valid_from > now %}Not started
+            {% else %}Expired{% endif %}
+          </dd>
+          <dt>Orders</dt><dd>{{ redemptions|length }} recent redemption{{ redemptions|length|pluralize }}</dd>
+        </dl>
+
+        {% if redemptions %}
+          <div class="dash-table-wrap" style="border:none;margin-top:1rem;">
+            <table class="dash-table">
+              <thead>
+                <tr>
+                  <th scope="col">Order</th>
+                  <th scope="col">Customer</th>
+                  <th scope="col">Discount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for redemption in redemptions %}
+                  <tr>
+                    <td><a href="{% url 'dashboard:order_detail' redemption.order.order_number %}">{{ redemption.order.order_number }}</a></td>
+                    <td>{{ redemption.order.full_name }}<span class="dash-sub">{{ redemption.created_at|date:'d M Y' }}</span></td>
+                    <td>₹{{ redemption.order.discount_amount|intcomma }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="dash-empty" style="margin-top:1rem;"><p>Not used yet.</p></div>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

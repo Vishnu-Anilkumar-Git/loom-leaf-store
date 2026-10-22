@@ -1,0 +1,28 @@
+{% load dashboard_tags %}
+{% if page.has_other_pages %}
+<nav class="dash-pagination" aria-label="Pagination">
+  {% if page.has_previous %}
+    <a href="{% qs_replace page=page.previous_page_number %}">← Previous</a>
+  {% else %}
+    <span class="is-disabled">← Previous</span>
+  {% endif %}
+
+  {% page_window page as window %}
+  {% for number in window %}
+    {% if number is None %}
+      <span class="is-disabled">…</span>
+    {% elif number == page.number %}
+      <span class="is-current" aria-current="page">{{ number }}</span>
+    {% else %}
+      <a href="{% qs_replace page=number %}">{{ number }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page.has_next %}
+    <a href="{% qs_replace page=page.next_page_number %}">Next →</a>
+  {% else %}
+    <span class="is-disabled">Next →</span>
+  {% endif %}
+  <span class="is-disabled">{{ page.paginator.count }} total</span>
+</nav>
+{% endif %}

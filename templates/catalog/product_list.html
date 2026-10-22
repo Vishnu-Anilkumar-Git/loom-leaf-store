@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}{{ title }} — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="page-intro">
+  <div class="container-fluid shell">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{{ title }}</span>
+    </nav>
+    <div class="page-intro__row">
+      <div>
+        <p class="eyebrow">{{ eyebrow }}</p>
+        <h1 class="page-title">{{ title }}</h1>
+        {% if category_description %}<p class="page-intro__description">{{ category_description }}</p>{% endif %}
+        {% if collection_description %}<p class="page-intro__description">{{ collection_description }}</p>{% endif %}
+      </div>
+      <p class="page-intro__count">{{ result_count }} piece{{ result_count|pluralize }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid shell catalogue">
+  <aside class="catalogue__sidebar" aria-label="Product filters">
+    {% include "components/filters.html" %}
+  </aside>
+
+  <div class="catalogue__main">
+    <div class="catalogue-toolbar">
+      <details class="mobile-filters">
+        <summary class="btn-editorial btn-editorial--outline">Filter <i class="bi bi-sliders2" aria-hidden="true"></i></summary>
+        <div class="mobile-filters__panel">
+          {% include "components/filters.html" %}
+        </div>
+      </details>
+
+      <form method="get" class="sort-form" aria-label="Sort products">
+        {% if active_filters.q %}<input type="hidden" name="q" value="{{ active_filters.q }}">{% endif %}
+        {% if active_filters.category %}<input type="hidden" name="category" value="{{ active_filters.category }}">{% endif %}
+        {% if active_filters.collection %}<input type="hidden" name="collection" value="{{ active_filters.collection }}">{% endif %}
+        {% if active_filters.min_price %}<input type="hidden" name="min_price" value="{{ active_filters.min_price }}">{% endif %}
+        {% if active_filters.max_price %}<input type="hidden" name="max_price" value="{{ active_filters.max_price }}">{% endif %}
+        {% for size in active_filters.size %}<input type="hidden" name="size" value="{{ size }}">{% endfor %}
+        {% for color in active_filters.color %}<input type="hidden" name="color" value="{{ color }}">{% endfor %}
+        {% if active_filters.availability %}<input type="hidden" name="availability" value="{{ active_filters.availability }}">{% endif %}
+        {% if active_filters.sale %}<input type="hidden" name="sale" value="1">{% endif %}
+        <label for="sort-select">Sort by</label>
+        <select id="sort-select" name="sort" data-auto-submit>
+          {% for value, label in sort_options.items %}
+            <option value="{{ value }}" {% if active_filters.sort == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button type="submit" class="btn-editorial btn-editorial--outline">Apply</button></noscript>
+      </form>
+    </div>
+
+    {% if active_filters.q %}
+      <div class="search-summary">
+        <span>Results for “{{ active_filters.q }}”</span>
+        <a href="{{ request.path }}" class="text-link">Clear search <i class="bi bi-x-lg" aria-hidden="true"></i></a>
+      </div>
+    {% endif %}
+
+    {% if products %}
+      <div class="product-grid product-grid--catalogue">
+        {% for product in products %}
+          {% include "components/product_card.html" with product=product %}
+        {% endfor %}
+      </div>
+      {% include "components/pagination.html" %}
+    {% else %}
+      <div class="empty-state empty-state--catalogue">
+        <p class="eyebrow">{% if search_empty %}Search{% else %}Nothing here yet{% endif %}</p>
+        <h2>{% if search_empty %}What are you looking for?{% elif active_filters.q %}No results for “{{ active_filters.q }}”{% else %}No pieces match those filters{% endif %}</h2>
+        {% if search_empty %}
+          <p>Search by piece, category or SKU. Try “linen”, “jacket” or “LL-M-001”.</p>
+          <form action="{% url 'catalog:search' %}" method="get" class="inline-search">
+            <label class="visually-hidden" for="catalogue-search">Search products</label>
+            <input id="catalogue-search" type="search" name="q" placeholder="Search the collection" required>
+            <button type="submit" class="btn-editorial btn-editorial--dark">Search</button>
+          </form>
+        {% else %}
+          <p>Try a different search, widen the price range, or clear the filters to see the full collection.</p>
+          <div class="empty-state__actions">
+            <a href="{{ request.path }}" class="btn-editorial btn-editorial--dark">Clear filters</a>
+            <a href="{% url 'catalog:product_list' %}" class="text-link">Shop all <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Something went wrong — LOOM&amp;LEAF</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <main class="container-fluid shell">
+    <div class="error-page">
+      <p class="eyebrow">Error 500</p>
+      <p class="error-page__code">500</p>
+      <h1>A loose thread.</h1>
+      <p>Something went wrong on our side. No order or payment state has been changed by this error. Please try again shortly.</p>
+      <div class="error-page__actions">
+        <a href="/" class="btn-editorial btn-editorial--dark">Back to home</a>
+        <a href="/cart/" class="text-link">Your bag <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      </div>
+      <p class="error-page__hint">If this keeps happening, contact the site administrator.</p>
+    </div>
+  </main>
+</body>
+</html>

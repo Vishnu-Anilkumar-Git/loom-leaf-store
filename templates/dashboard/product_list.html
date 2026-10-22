@@ -1,0 +1,140 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load dashboard_tags humanize %}
+
+{% block eyebrow %}Catalogue{% endblock %}
+{% block page_title %}Products{% endblock %}
+
+{% block page_actions %}
+  <a class="dash-btn" href="{% url 'dashboard:product_create' %}">
+    <i class="bi bi-plus-lg" aria-hidden="true"></i> Add product
+  </a>
+  <a class="dash-btn dash-btn--light" href="{% url 'dashboard:inventory' %}">Inventory</a>
+{% endblock %}
+
+{% block dash_content %}
+  <form method="get" class="dash-filters" aria-label="Product filters">
+    <div class="dash-search">
+      <label class="visually-hidden" for="product-q">Search products</label>
+      <input class="dash-input" type="search" id="product-q" name="q"
+             value="{{ query }}" placeholder="Search name, SKU, description…">
+      <button class="dash-btn dash-btn--light" type="submit">Search</button>
+    </div>
+
+    <div class="dash-filters__field">
+      <label for="product-status">Status</label>
+      <select class="dash-input dash-input--sm" id="product-status" name="status">
+        <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
+        <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+        <option value="archived" {% if status == 'archived' %}selected{% endif %}>Archived</option>
+        <option value="sale" {% if status == 'sale' %}selected{% endif %}>On sale</option>
+        <option value="new" {% if status == 'new' %}selected{% endif %}>New arrivals</option>
+      </select>
+    </div>
+
+    <div class="dash-filters__field">
+      <label for="product-stock">Stock</label>
+      <select class="dash-input dash-input--sm" id="product-stock" name="stock">
+        <option value="" {% if not stock_filter %}selected{% endif %}>Any</option>
+        <option value="in" {% if stock_filter == 'in' %}selected{% endif %}>In stock</option>
+        <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>Out of stock</option>
+      </select>
+    </div>
+
+    <div class="dash-filters__field">
+      <label for="product-sort">Sort</label>
+      <select class="dash-input dash-input--sm" id="product-sort" name="sort">
+        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+        <option value="name" {% if sort == 'name' %}selected{% endif %}>Name A–Z</option>
+        <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: low to high</option>
+        <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: high to low</option>
+        <option value="stock_asc" {% if sort == 'stock_asc' %}selected{% endif %}>Stock: low first</option>
+        <option value="stock_desc" {% if sort == 'stock_desc' %}selected{% endif %}>Stock: high first</option>
+      </select>
+    </div>
+  </form>
+
+  {% if page.object_list %}
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th scope="col">Product</th>
+            <th scope="col">Category</th>
+            <th scope="col" class="num">Price</th>
+            <th scope="col" class="num">Stock</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in page.object_list %}
+            <tr>
+              <td>
+                <div class="dash-cell-title">
+                  {% if product.main_image %}
+                    <img class="dash-thumb" src="{{ product.main_image.url }}" alt="">
+                  {% else %}
+                    <span class="dash-thumb" aria-hidden="true"></span>
+                  {% endif %}
+                  <p>
+                    {{ product.name }}
+                    <span class="dash-sub">SKU {{ product.sku }}</span>
+                  </p>
+                </div>
+              </td>
+              <td>{{ product.category.name }}</td>
+              <td class="num">
+                {% if product.has_sale %}
+                  <s class="dash-sub">₹{{ product.base_price|intcomma }}</s>
+                  ₹{{ product.sale_price|intcomma }}
+                {% else %}
+                  ₹{{ product.base_price|intcomma }}
+                {% endif %}
+              </td>
+              <td class="num">
+                {% if product.stock_units %}
+                  {{ product.stock_units }}
+                {% else %}
+                  <span class="dash-badge dash-badge--danger">0</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="dash-badge-row">
+                  {% if product.is_active %}
+                    <span class="dash-badge dash-badge--ok">Active</span>
+                  {% else %}
+                    <span class="dash-badge dash-badge--danger">Archived</span>
+                  {% endif %}
+                  {% if product.is_featured %}<span class="dash-badge">Featured</span>{% endif %}
+                  {% if product.is_new_arrival %}<span class="dash-badge dash-badge--dark">New</span>{% endif %}
+                  {% if product.has_sale %}<span class="dash-badge dash-badge--warn">Sale</span>{% endif %}
+                </div>
+              </td>
+              <td>
+                <div class="dash-row-actions">
+                  <a class="dash-btn dash-btn--light dash-btn--sm"
+                     href="{% url 'dashboard:product_edit' product.pk %}">Edit</a>
+                  <form method="post" action="{% url 'dashboard:product_archive' product.pk %}"
+                        data-confirm="{% if product.is_active %}Archive “{{ product.name }}”? It will be hidden from the storefront.{% else %}Restore “{{ product.name }}” to the storefront?{% endif %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button class="dash-btn {% if product.is_active %}dash-btn--danger{% else %}dash-btn--light{% endif %} dash-btn--sm"
+                            type="submit">
+                      {% if product.is_active %}Archive{% else %}Restore{% endif %}
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "dashboard/includes/pagination.html" %}
+  {% else %}
+    <div class="dash-empty">
+      <p>No products match these filters.</p>
+      <a class="dash-btn dash-btn--light" href="{% url 'dashboard:product_list' %}">Clear filters</a>
+    </div>
+  {% endif %}
+{% endblock %}

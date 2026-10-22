@@ -1,0 +1,106 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load humanize %}
+
+{% block eyebrow %}Customer{% endblock %}
+{% block page_title %}{{ customer.get_full_name|default:customer.get_username }}{% endblock %}
+
+{% block page_actions %}
+  <a class="dash-btn dash-btn--light" href="{% url 'dashboard:customer_list' %}">← All customers</a>
+  {% if user.is_superuser %}
+    <a class="dash-btn dash-btn--light" href="{% url 'admin:auth_user_change' customer.pk %}">Django admin</a>
+  {% endif %}
+{% endblock %}
+
+{% block dash_content %}
+  <div class="dash-grid dash-grid--metrics" style="margin-bottom:1rem;">
+    <article class="dash-card">
+      <p class="dash-card__label">Orders</p>
+      <p class="dash-card__value">{{ orders_total }}</p>
+      <p class="dash-card__meta">excluding cancelled &amp; returned</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Lifetime spend</p>
+      <p class="dash-card__value">₹{{ lifetime_spend|intcomma }}</p>
+      <p class="dash-card__meta">paid orders to date</p>
+    </article>
+    <article class="dash-card">
+      <p class="dash-card__label">Customer since</p>
+      <p class="dash-card__value" style="font-size:1.2rem;">{{ customer.date_joined|date:'d M Y' }}</p>
+      <p class="dash-card__meta">{% if customer.is_active %}Active account{% else %}Disabled{% endif %}</p>
+    </article>
+  </div>
+
+  <div class="dash-grid dash-grid--two">
+    <section class="dash-card" aria-label="Customer details">
+      <div class="dash-card__head"><h2 class="dash-card__title">Contact details</h2></div>
+
+      <form method="post" action="{% url 'dashboard:customer_edit' customer.pk %}" novalidate>
+        {% csrf_token %}
+        {% for field in edit_form %}
+          <label class="dash-field" for="{{ field.id_for_label }}">
+            <span class="dash-field__label">{{ field.label }}{% if field.field.required %} *{% endif %}</span>
+            {{ field }}
+            {% if field.errors %}
+              <ul class="dash-errors">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+            {% endif %}
+          </label>
+        {% endfor %}
+        <div class="dash-form-actions">
+          <button class="dash-btn" type="submit">Save details</button>
+        </div>
+        <p class="dash-field__help">
+          Passwords, permissions and payment details are never editable from this panel —
+          use Django admin for account-level changes.
+        </p>
+      </form>
+
+      {% if addresses %}
+        <div class="dash-card__head" style="margin-top:1.25rem;">
+          <h2 class="dash-card__title">Saved addresses</h2>
+        </div>
+        <ul class="dash-timeline">
+          {% for address in addresses %}
+            <li>
+              <strong>{{ address.label }}{% if address.is_default %} · default{% endif %}</strong>
+              <span>
+                {{ address.full_name }} · {{ address.phone }}<br>
+                {{ address.line1 }}{% if address.line2 %}, {{ address.line2 }}{% endif %},
+                {{ address.city }}, {{ address.state }} — {{ address.postal_code }}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+
+    <section class="dash-card" aria-label="Order history">
+      <div class="dash-card__head"><h2 class="dash-card__title">Order history</h2></div>
+      {% if orders %}
+        <div class="dash-table-wrap" style="border:none;">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th scope="col">Order</th>
+                <th scope="col">Date</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in orders %}
+                <tr>
+                  <td><a href="{% url 'dashboard:order_detail' order.order_number %}">{{ order.order_number }}</a></td>
+                  <td>{{ order.created_at|date:'d M Y' }}</td>
+                  <td><span class="dash-badge">{{ order.get_status_display }}</span></td>
+                  <td class="num">₹{{ order.total_amount|intcomma }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="dash-empty"><p>This customer has not placed an order yet.</p></div>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

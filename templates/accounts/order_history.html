@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Order history — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="page-intro page-intro--compact">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a><span aria-hidden="true">/</span>
+      <a href="{% url 'accounts:profile' %}">Account</a><span aria-hidden="true">/</span><span aria-current="page">Orders</span>
+    </nav>
+    <p class="eyebrow">History</p>
+    <h1 class="page-title">Orders</h1>
+  </div>
+
+  <div class="account-layout">
+    <aside class="account-nav" aria-label="Account navigation">
+      <a href="{% url 'accounts:profile' %}">Profile</a>
+      <a href="{% url 'accounts:order_history' %}" class="is-active">Orders</a>
+      <a href="{% url 'wishlist:detail' %}">Wishlist</a>
+      <a href="{% url 'accounts:password_change' %}">Password</a>
+    </aside>
+
+    <div class="account-content">
+      {% if orders %}
+        <div class="order-list">
+          {% for order in orders %}
+            <article class="order-card">
+              <div class="order-card__head">
+                <div>
+                  <p class="eyebrow">{{ order.created_at|date:"j F Y" }}</p>
+                  <h2><a href="{{ order.get_absolute_url }}">{{ order.order_number }}</a></h2>
+                </div>
+                <span class="status-badge status-badge--{{ order.status }}">{{ order.get_status_display }}</span>
+              </div>
+              <div class="order-card__body">
+                <div class="order-card__items">
+                  {% for item in order.items.all|slice:":3" %}
+                    <span>{{ item.quantity }} × {{ item.product_name }} <span>({{ item.size }})</span></span>
+                  {% endfor %}
+                  {% if order.item_count > 3 %}<span>+ more</span>{% endif %}
+                </div>
+                <div class="order-card__totals">
+                  <span>Payment: {{ order.get_payment_status_display }}</span>
+                  <strong>₹{{ order.total_amount|floatformat:"-2"|intcomma }}</strong>
+                </div>
+              </div>
+              <div class="order-card__foot">
+                <a href="{{ order.get_absolute_url }}" class="text-link">View order <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                {% if order.payment_method == 'razorpay' and order.payment_status != 'paid' and order.status != 'cancelled' %}
+                  <a href="{% url 'orders:payment' order.order_number %}" class="text-link">Complete payment <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <i class="bi bi-box-seam" aria-hidden="true"></i>
+          <p class="eyebrow">No orders yet</p>
+          <h2>Your first order starts here.</h2>
+          <p>Browse the new season and find something that feels like you.</p>
+          <a href="{% url 'catalog:new_arrivals' %}" class="btn-editorial btn-editorial--dark">Shop new arrivals</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

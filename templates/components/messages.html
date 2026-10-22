@@ -1,0 +1,18 @@
+{% if messages %}
+  <div class="toast-stack" aria-live="polite" aria-atomic="true" data-toast-stack>
+    {% for message in messages %}
+      <div class="store-toast store-toast--{{ message.tags|default:'info' }}" role="status" data-toast>
+        <span class="store-toast__icon" aria-hidden="true">
+          {% if message.tags == 'success' %}<i class="bi bi-check2"></i>
+          {% elif message.tags == 'error' %}<i class="bi bi-exclamation-circle"></i>
+          {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle"></i>
+          {% else %}<i class="bi bi-info-circle"></i>{% endif %}
+        </span>
+        <p>{{ message }}</p>
+        <button type="button" class="store-toast__close" data-toast-close aria-label="Dismiss notification">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

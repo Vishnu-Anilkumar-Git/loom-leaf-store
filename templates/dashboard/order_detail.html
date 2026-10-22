@@ -1,0 +1,221 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load humanize %}
+
+{% block eyebrow %}Order{% endblock %}
+{% block page_title %}{{ order.order_number }}{% endblock %}
+
+{% block page_actions %}
+  <a class="dash-btn dash-btn--light" href="{% url 'dashboard:order_list' %}">← All orders</a>
+  <a class="dash-btn dash-btn--light" href="{% url 'admin:orders_order_change' order.pk %}">Django admin</a>
+{% endblock %}
+
+{% block dash_content %}
+  <div class="dash-badge-row" style="margin-bottom:1rem;">
+    <span class="dash-badge {% if order.status == 'delivered' %}dash-badge--ok{% elif order.status == 'cancelled' or order.status == 'returned' %}dash-badge--danger{% else %}dash-badge--dark{% endif %}">
+      {{ order.get_status_display }}
+    </span>
+    <span class="dash-badge {% if order.payment_status == 'paid' %}dash-badge--ok{% elif order.payment_status == 'failed' %}dash-badge--danger{% endif %}">
+      Payment: {{ order.get_payment_status_display }}
+    </span>
+    <span class="dash-badge">{{ order.get_payment_method_display }}</span>
+    <span class="dash-badge">{{ order.created_at|date:'d M Y, H:i' }}</span>
+    {% if order.coupon_code %}<span class="dash-badge">Coupon {{ order.coupon_code }}</span>{% endif %}
+  </div>
+
+  {% if order.status == 'cancelled' %}
+    <div class="dash-alert dash-alert--warn">
+      <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+      <div>This order was cancelled and its stock was restored{% if order.stock_restored %} (restored once){% endif %}. No further status changes are possible.</div>
+    </div>
+  {% endif %}
+
+  <div class="dash-grid dash-grid--two">
+    <!-- Left: items + totals -->
+    <div class="dash-stack">
+      <section class="dash-card" aria-label="Order items">
+        <div class="dash-card__head"><h2 class="dash-card__title">Items</h2></div>
+        <div class="dash-table-wrap" style="border:none;">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Variant</th>
+                <th scope="col" class="num">Qty</th>
+                <th scope="col" class="num">Unit</th>
+                <th scope="col" class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items.all %}
+                <tr>
+                  <td>
+                    {% if item.product %}
+                      <a href="{% url 'dashboard:product_edit' item.product.pk %}">{{ item.product_name }}</a>
+                    {% else %}
+                      {{ item.product_name }}
+                    {% endif %}
+                    <span class="dash-sub">SKU {{ item.sku }}</span>
+                  </td>
+                  <td>{{ item.size }} · {{ item.color }}</td>
+                  <td class="num">{{ item.quantity }}</td>
+                  <td class="num">₹{{ item.unit_price|intcomma }}</td>
+                  <td class="num">₹{{ item.line_total|intcomma }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <dl class="dash-dl" style="margin-top:1rem;">
+          <dt>Subtotal</dt><dd>₹{{ order.subtotal|intcomma }}</dd>
+          <dt>Discount</dt>
+          <dd>
+            {% if order.discount_amount %}− ₹{{ order.discount_amount|intcomma }}
+              {% if order.coupon_code %}<span class="dash-sub">{{ order.coupon_code }}</span>{% endif %}
+            {% else %}—{% endif %}
+          </dd>
+          <dt>Shipping</dt>
+          <dd>{% if order.shipping_amount %}₹{{ order.shipping_amount|intcomma }}{% else %}Free{% endif %}</dd>
+          <dt>Total</dt><dd><strong>₹{{ order.total_amount|intcomma }}</strong></dd>
+        </dl>
+      </section>
+
+      <!-- Fulfilment controls -->
+      <section class="dash-card" aria-label="Order status">
+        <div class="dash-card__head"><h2 class="dash-card__title">Status &amp; tracking</h2></div>
+
+        {% if allowed_next %}
+          <form method="post" action="{% url 'dashboard:order_set_status' order.order_number %}" class="dash-inline-form" style="margin-bottom:1rem;">
+            {% csrf_token %}
+            <label class="dash-field" style="margin:0;">
+              <span class="dash-field__label">Move to</span>
+              <select class="dash-input dash-input--sm" name="target">
+                {% for value, label in allowed_next %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="dash-field" style="margin:0;flex:1;min-width:180px;">
+              <span class="dash-field__label">Timeline note (optional)</span>
+              <input class="dash-input dash-input--sm" type="text" name="note" maxlength="240" placeholder="e.g. handed to courier">
+            </label>
+            <button class="dash-btn" type="submit" style="align-self:flex-end;">Update status</button>
+          </form>
+          <p class="dash-field__help">
+            Only valid transitions are offered: {{ order.get_status_display }} →
+            {% for value, label in allowed_next %}{{ label }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}.
+          </p>
+        {% else %}
+          <p class="dash-card__meta">No further status changes are allowed from <strong>{{ order.get_status_display }}</strong>.</p>
+        {% endif %}
+
+        {% if order.payment_method == 'cod' and order.payment_status != 'paid' and order.status != 'cancelled' %}
+          <form method="post" action="{% url 'dashboard:order_mark_paid' order.order_number %}"
+                class="dash-inline-form" data-confirm="Mark {{ order.order_number }} as paid? This records a manual COD payment.">
+            {% csrf_token %}
+            <button class="dash-btn dash-btn--light dash-btn--sm" type="submit">Mark COD payment received</button>
+          </form>
+        {% endif %}
+
+        <form method="post" action="{% url 'dashboard:order_save_tracking' order.order_number %}"
+              class="dash-inline-form" style="margin-top:1rem;">
+          {% csrf_token %}
+          <label class="dash-field" style="margin:0;">
+            <span class="dash-field__label">Carrier</span>
+            <input class="dash-input dash-input--sm" type="text" name="tracking_carrier"
+                   value="{{ order.tracking_carrier }}" placeholder="Delhivery, Blue Dart…">
+          </label>
+          <label class="dash-field" style="margin:0;">
+            <span class="dash-field__label">Tracking number</span>
+            <input class="dash-input dash-input--sm" type="text" name="tracking_number"
+                   value="{{ order.tracking_number }}" placeholder="Reference number">
+          </label>
+          <button class="dash-btn dash-btn--light dash-btn--sm" type="submit" style="align-self:flex-end;">Save tracking</button>
+        </form>
+        {% if order.tracking_number %}
+          <p class="dash-card__meta" style="margin-top:0.75rem;">
+            <i class="bi bi-truck" aria-hidden="true"></i>
+            {{ order.tracking_carrier|default:"Carrier" }} · {{ order.tracking_number }}
+          </p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- Right: customer, notes, history -->
+    <div class="dash-stack">
+      <section class="dash-card" aria-label="Customer and shipping">
+        <div class="dash-card__head"><h2 class="dash-card__title">Customer &amp; shipping</h2></div>
+        <dl class="dash-dl">
+          <dt>Name</dt>
+          <dd>
+            {{ order.full_name }}
+            {% if order.user %}<span class="dash-sub"><a href="{% url 'dashboard:customer_detail' order.user.pk %}">View customer</a></span>{% endif %}
+          </dd>
+          <dt>Email</dt><dd><a href="mailto:{{ order.email }}">{{ order.email }}</a></dd>
+          <dt>Phone</dt><dd>{{ order.phone }}</dd>
+          <dt>Address</dt>
+          <dd>
+            {{ order.address_line1 }}{% if order.address_line2 %}, {{ order.address_line2 }}{% endif %}<br>
+            {{ order.city }}, {{ order.state }} — {{ order.postal_code }}
+            {% if order.delivery_instructions %}
+              <span class="dash-sub">Note: {{ order.delivery_instructions }}</span>
+            {% endif %}
+          </dd>
+        </dl>
+      </section>
+
+      <section class="dash-card" aria-label="Internal notes">
+        <div class="dash-card__head"><h2 class="dash-card__title">Internal notes</h2></div>
+        {% if order.internal_note %}
+          <div class="dash-alert"><i class="bi bi-sticky" aria-hidden="true"></i><div style="white-space:pre-wrap;">{{ order.internal_note }}</div></div>
+        {% else %}
+          <p class="dash-card__meta">No internal notes yet. Notes are visible to staff only.</p>
+        {% endif %}
+        <form method="post" action="{% url 'dashboard:order_add_note' order.order_number %}" class="dash-inline-form">
+          {% csrf_token %}
+          <label class="visually-hidden" for="internal-note">Add internal note</label>
+          <input class="dash-input dash-input--sm" type="text" id="internal-note" name="note"
+                 maxlength="1000" placeholder="Add a note…" required style="flex:1;min-width:180px;">
+          <button class="dash-btn dash-btn--light dash-btn--sm" type="submit">Add note</button>
+        </form>
+      </section>
+
+      <section class="dash-card" aria-label="Order timeline">
+        <div class="dash-card__head"><h2 class="dash-card__title">Status timeline</h2></div>
+        {% if order.status_history.all %}
+          <ul class="dash-timeline">
+            {% for entry in order.status_history.all reversed %}
+              <li>
+                <strong>{{ entry.get_status_display }}</strong>
+                <span>
+                  {{ entry.created_at|date:'d M Y, H:i' }}
+                  {% if entry.changed_by %} · by {{ entry.changed_by.get_username }}{% endif %}
+                  {% if entry.note %}<br>“{{ entry.note }}”{% endif %}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="dash-card__meta">No status changes recorded yet.</p>
+        {% endif %}
+
+        {% if order.payments.all %}
+          <div class="dash-card__head" style="margin-top:1.25rem;"><h2 class="dash-card__title">Payment attempts</h2></div>
+          <ul class="dash-timeline">
+            {% for payment in order.payments.all %}
+              <li>
+                <strong>{{ payment.get_status_display }} · ₹{{ payment.amount|intcomma }} {{ payment.currency }}</strong>
+                <span>
+                  {{ payment.provider_order_id }}
+                  {% if payment.provider_payment_id %}<br>{{ payment.provider_payment_id }}{% endif %}
+                  {% if payment.signature_verified %} · signature verified{% endif %}
+                  {% if payment.error_message %}<br>{{ payment.error_message }}{% endif %}
+                  <br>{{ payment.created_at|date:'d M Y, H:i' }}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

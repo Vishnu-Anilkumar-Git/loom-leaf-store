@@ -1,0 +1,99 @@
+{% load static %}
+<form method="get" class="filters" aria-label="Filter products">
+  <input type="hidden" name="sort" value="{{ active_filters.sort }}">
+
+  {% if active_filters.q %}
+    <input type="hidden" name="q" value="{{ active_filters.q }}">
+  {% endif %}
+
+  <div class="filters__header">
+    <h2>Filter</h2>
+    {% if has_filters %}<a href="{{ request.path }}" class="filters__clear">Clear all</a>{% endif %}
+  </div>
+
+  {% if not category_obj %}
+    <fieldset class="filter-group">
+      <legend>Department</legend>
+      <label class="filter-option">
+        <input type="radio" name="category" value="" {% if not active_filters.category %}checked{% endif %}>
+        <span>All departments</span>
+      </label>
+      {% for category in categories %}
+        <label class="filter-option">
+          <input type="radio" name="category" value="{{ category.kind }}" {% if active_filters.category == category.kind %}checked{% endif %}>
+          <span>{{ category.name }}</span>
+        </label>
+      {% endfor %}
+    </fieldset>
+  {% endif %}
+
+  {% if not collection %}
+    <fieldset class="filter-group">
+      <legend>Collection</legend>
+      <label class="filter-option">
+        <input type="radio" name="collection" value="" {% if not active_filters.collection %}checked{% endif %}>
+        <span>All collections</span>
+      </label>
+      {% for nav_collection in collections %}
+        <label class="filter-option">
+          <input type="radio" name="collection" value="{{ nav_collection.slug }}" {% if active_filters.collection == nav_collection.slug %}checked{% endif %}>
+          <span>{{ nav_collection.name }}</span>
+        </label>
+      {% endfor %}
+    </fieldset>
+  {% endif %}
+
+  <fieldset class="filter-group">
+    <legend>Price (₹)</legend>
+    <div class="price-range">
+      <label>
+        <span>Min</span>
+        <input type="number" name="min_price" min="0" step="1" inputmode="numeric" placeholder="0" value="{{ active_filters.min_price }}">
+      </label>
+      <span class="price-range__dash" aria-hidden="true">–</span>
+      <label>
+        <span>Max</span>
+        <input type="number" name="max_price" min="0" step="1" inputmode="numeric" placeholder="5000" value="{{ active_filters.max_price }}">
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class="filter-group">
+    <legend>Size</legend>
+    <div class="filter-chips">
+      {% for size in sizes %}
+        <label class="chip-option">
+          <input type="checkbox" name="size" value="{{ size.code }}" {% if size.code in active_filters.size %}checked{% endif %}>
+          <span>{{ size.name }}</span>
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="filter-group">
+    <legend>Colour</legend>
+    <div class="filter-colors">
+      {% for color in colors %}
+        <label class="color-option">
+          <input type="checkbox" name="color" value="{{ color.slug }}" {% if color.slug in active_filters.color %}checked{% endif %}>
+          <span class="color-option__swatch" style="background:{{ color.hex_code }}"></span>
+          <span>{{ color.name }}</span>
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="filter-group">
+    <legend>Availability</legend>
+    <label class="filter-option">
+      <input type="checkbox" name="availability" value="in_stock" {% if active_filters.availability == 'in_stock' %}checked{% endif %}>
+      <span>In stock only</span>
+    </label>
+    <label class="filter-option">
+      <input type="checkbox" name="sale" value="1" {% if active_filters.sale %}checked{% endif %}>
+      <span>On sale</span>
+    </label>
+  </fieldset>
+
+  <button type="submit" class="btn-editorial btn-editorial--dark filters__submit">Apply filters</button>
+</form>

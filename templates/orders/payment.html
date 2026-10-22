@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Pay for {{ order.order_number }} — LOOM&amp;LEAF{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell page-shell">
+  <div class="payment-page">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <a href="{% url 'accounts:order_history' %}">Orders</a><span aria-hidden="true">/</span>
+      <span aria-current="page">{{ order.order_number }}</span>
+    </nav>
+
+    <div class="payment-card">
+      <p class="eyebrow">Secure payment</p>
+      <h1 class="page-title">Complete your order</h1>
+      <p class="payment-card__order">Order {{ order.order_number }}</p>
+      <p class="payment-card__amount">₹{{ order.total_amount|floatformat:"-2"|intcomma }}</p>
+      <p class="payment-card__meta">{{ order.item_count }} item{{ order.item_count|pluralize }} · {{ order.get_payment_method_display }}</p>
+
+      <div class="payment-card__notice">
+        <i class="bi bi-info-circle" aria-hidden="true"></i>
+        <p>Razorpay is running in <strong>test mode</strong>. Use Razorpay's test payment methods only — never enter a real card. Your payment is verified on the server before the order is marked paid.</p>
+      </div>
+
+      {% if payment %}
+        <button type="button" class="btn-editorial btn-editorial--dark btn-block" data-razorpay-pay>
+          Pay with Razorpay <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </button>
+        <p class="payment-card__status" data-payment-status aria-live="polite"></p>
+      {% else %}
+        <p class="form-error">No payment attempt is available. Return to the order and try again.</p>
+      {% endif %}
+
+      <a href="{{ order.get_absolute_url }}" class="text-link payment-card__back"><i class="bi bi-arrow-left" aria-hidden="true"></i> Return to order</a>
+      <p class="payment-card__fineprint">Stock for this order is reserved. If payment is not completed, the order remains pending until an administrator cancels it.</p>
+    </div>
+  </div>
+</div>
+
+{{ payment_data|json_script:"payment-data" }}
+{% endblock %}
+
+{% block extra_js %}
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="{% static 'js/checkout.js' %}" defer></script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load dashboard_tags humanize %}
+
+{% block eyebrow %}People{% endblock %}
+{% block page_title %}Customers{% endblock %}
+
+{% block dash_content %}
+  <form method="get" class="dash-filters" aria-label="Customer filters">
+    <div class="dash-search">
+      <label class="visually-hidden" for="customer-q">Search customers</label>
+      <input class="dash-input" type="search" id="customer-q" name="q" value="{{ query }}"
+             placeholder="Name, username, email or phone…">
+      <button class="dash-btn dash-btn--light" type="submit">Search</button>
+    </div>
+    <div class="dash-filters__field">
+      <label for="customer-sort">Sort</label>
+      <select class="dash-input dash-input--sm" id="customer-sort" name="sort">
+        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
+        <option value="name" {% if sort == 'name' %}selected{% endif %}>Name A–Z</option>
+        <option value="spend" {% if sort == 'spend' %}selected{% endif %}>Highest spend</option>
+        <option value="orders" {% if sort == 'orders' %}selected{% endif %}>Most orders</option>
+      </select>
+    </div>
+  </form>
+
+  {% if page.object_list %}
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th scope="col">Customer</th>
+            <th scope="col">Contact</th>
+            <th scope="col">Joined</th>
+            <th scope="col" class="num">Orders</th>
+            <th scope="col" class="num">Lifetime spend</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for customer in page.object_list %}
+            <tr>
+              <td>
+                {{ customer.get_full_name|default:customer.get_username }}
+                <span class="dash-sub">@{{ customer.get_username }}</span>
+              </td>
+              <td>
+                {{ customer.email|default:"—" }}
+                <span class="dash-sub">{{ customer.profile.phone|default:"No phone" }}</span>
+              </td>
+              <td>{{ customer.date_joined|date:'d M Y' }}</td>
+              <td class="num">{{ customer.order_count }}</td>
+              <td class="num">₹{{ customer.lifetime_spend|default_if_none:0|intcomma }}</td>
+              <td><a class="dash-btn dash-btn--light dash-btn--sm" href="{% url 'dashboard:customer_detail' customer.pk %}">View</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "dashboard/includes/pagination.html" %}
+  {% else %}
+    <div class="dash-empty">
+      <p>No customers match this search.</p>
+      <a class="dash-btn dash-btn--light" href="{% url 'dashboard:customer_list' %}">Clear search</a>
+    </div>
+  {% endif %}
+{% endblock %}

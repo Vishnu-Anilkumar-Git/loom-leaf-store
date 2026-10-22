@@ -1,0 +1,107 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load dashboard_tags humanize %}
+
+{% block eyebrow %}Marketing{% endblock %}
+{% block page_title %}Promotions{% endblock %}
+
+{% block page_actions %}
+  <a class="dash-btn" href="{% url 'dashboard:coupon_create' %}">
+    <i class="bi bi-plus-lg" aria-hidden="true"></i> Create coupon
+  </a>
+{% endblock %}
+
+{% block dash_content %}
+  <form method="get" class="dash-filters" aria-label="Coupon filters">
+    <div class="dash-search">
+      <label class="visually-hidden" for="coupon-q">Search coupons</label>
+      <input class="dash-input" type="search" id="coupon-q" name="q" value="{{ query }}"
+             placeholder="Search code or description…">
+      <button class="dash-btn dash-btn--light" type="submit">Search</button>
+    </div>
+    <div class="dash-filters__field">
+      <label for="coupon-status">Status</label>
+      <select class="dash-input dash-input--sm" id="coupon-status" name="status">
+        <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
+        <option value="active" {% if status == 'active' %}selected{% endif %}>Live now</option>
+        <option value="scheduled" {% if status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+        <option value="expired" {% if status == 'expired' %}selected{% endif %}>Expired</option>
+        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Deactivated</option>
+      </select>
+    </div>
+  </form>
+
+  {% if page.object_list %}
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th scope="col">Code</th>
+            <th scope="col">Discount</th>
+            <th scope="col">Window</th>
+            <th scope="col">Usage</th>
+            <th scope="col">State</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for coupon in page.object_list %}
+            <tr>
+              <td>
+                <a href="{% url 'dashboard:coupon_edit' coupon.pk %}">{{ coupon.code }}</a>
+                <span class="dash-sub">{{ coupon.description|default:"No description" }}</span>
+              </td>
+              <td>
+                {% if coupon.discount_type == 'percentage' %}
+                  {{ coupon.value|floatformat:0 }}% off
+                  {% if coupon.max_discount %}<span class="dash-sub">capped at ₹{{ coupon.max_discount|intcomma }}</span>{% endif %}
+                {% else %}
+                  ₹{{ coupon.value|intcomma }} off
+                {% endif %}
+                <span class="dash-sub">min ₹{{ coupon.min_order_amount|intcomma }}</span>
+              </td>
+              <td>
+                {{ coupon.valid_from|date:'d M Y' }}
+                <span class="dash-sub">→ {{ coupon.valid_until|date:'d M Y' }}</span>
+              </td>
+              <td>
+                {{ coupon.times_used }}{% if coupon.usage_limit %}/{{ coupon.usage_limit }}{% endif %}
+                <span class="dash-sub">{{ coupon.redemption_count }} redeemed · {{ coupon.order_count }} orders</span>
+              </td>
+              <td>
+                {% if not coupon.is_active %}
+                  <span class="dash-badge dash-badge--danger">Inactive</span>
+                {% elif coupon.is_live %}
+                  <span class="dash-badge dash-badge--ok">Live</span>
+                {% elif coupon.valid_from > now %}
+                  <span class="dash-badge dash-badge--warn">Scheduled</span>
+                {% else %}
+                  <span class="dash-badge dash-badge--warn">Expired</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="dash-row-actions">
+                  <a class="dash-btn dash-btn--light dash-btn--sm"
+                     href="{% url 'dashboard:coupon_edit' coupon.pk %}">Edit</a>
+                  <form method="post" action="{% url 'dashboard:coupon_toggle' coupon.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button class="dash-btn {% if coupon.is_active %}dash-btn--danger{% else %}dash-btn--light{% endif %} dash-btn--sm"
+                            type="submit" data-archive-confirm="{% if coupon.is_active %}Deactivate coupon {{ coupon.code }}? Customers will no longer be able to apply it.{% else %}Activate coupon {{ coupon.code }}?{% endif %}">
+                      {% if coupon.is_active %}Deactivate{% else %}Activate{% endif %}
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "dashboard/includes/pagination.html" %}
+  {% else %}
+    <div class="dash-empty">
+      <p>No coupons match these filters.</p>
+      <a class="dash-btn" href="{% url 'dashboard:coupon_create' %}">Create the first coupon</a>
+    </div>
+  {% endif %}
+{% endblock %}

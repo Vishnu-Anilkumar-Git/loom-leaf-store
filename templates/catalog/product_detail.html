@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}{{ product.name }} — LOOM&amp;LEAF{% endblock %}
+{% block meta_description %}{{ product.short_description }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid shell">
+  <nav class="breadcrumb-nav pdp-breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'core:home' %}">Home</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ product.category.get_absolute_url }}">{{ product.category.name }}</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ product.name }}</span>
+  </nav>
+
+  <div class="pdp">
+    <div class="pdp__gallery">
+      <div class="pdp__main-image">
+        {% if product.main_image %}
+          <img id="gallery-main" src="{{ product.main_image.url }}" alt="{{ product.name }}" width="900" height="1125" data-gallery-main>
+        {% else %}
+          <img id="gallery-main" src="{% static 'images/placeholder.svg' %}" alt="{{ product.name }}" width="900" height="1125" data-gallery-main>
+        {% endif %}
+        {% if product.is_new_arrival %}<span class="pdp__flag">New season</span>{% endif %}
+      </div>
+      {% if gallery|length > 1 %}
+        <div class="pdp__thumbs" role="list">
+          {% for image in gallery %}
+            <button type="button" class="pdp__thumb{% if forloop.first %} is-active{% endif %}"
+                    data-gallery-thumb data-src="{{ image.url }}" aria-label="View image {{ forloop.counter }} of {{ gallery|length }}">
+              <img src="{{ image.url }}" alt="" width="160" height="200" loading="lazy">
+            </button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="pdp__info">
+      <div class="pdp__heading">
+        <p class="eyebrow">{{ product.category.name }} / {{ product.sku }}</p>
+        <h1 class="pdp__title">{{ product.name }}</h1>
+        <div class="pdp__rating">
+          {% if rating_total %}
+            {% include "components/stars.html" with rating=rating_avg %}
+            <a href="#reviews">{{ rating_avg|floatformat:1 }} · {{ rating_total }} review{{ rating_total|pluralize }}</a>
+          {% else %}
+            <span class="pdp__rating-empty">No reviews yet</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pdp__price">
+        <span class="pdp__current">₹{{ product.price|floatformat:"-2"|intcomma }}</span>
+        {% if product.has_sale %}
+          <s>₹{{ product.base_price|floatformat:"-2"|intcomma }}</s>
+          <span class="pdp__save">Save {{ product.discount_percent }}%</span>
+        {% endif %}
+        <span class="pdp__tax">Inclusive of all taxes</span>
+      </div>
+
+      <p class="pdp__short">{{ product.short_description }}</p>
+
+      <form method="post" action="{% url 'cart:add' product.slug %}" class="pdp__form" data-pdp-form>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+
+        <fieldset class="pdp__option-group">
+          <legend class="option-label">Colour <span data-selected-color>{{ product.color_list.0.name }}</span></legend>
+          <div class="color-swatches">
+            {% for color in product.color_list %}
+              <label class="color-swatch" title="{{ color.name }}">
+                <input type="radio" name="color" value="{{ color.slug }}" {% if forloop.first %}checked{% endif %}>
+                <span class="color-swatch__disc" style="background:{{ color.hex_code }}"></span>
+                <span class="color-swatch__name">{{ color.name }}</span>
+              </label>
+            {% empty %}
+              <p class="form-hint">This piece is currently unavailable.</p>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <fieldset class="pdp__option-group">
+          <legend class="option-label">Size <a href="#size-guide" class="option-label__link">Size guide</a></legend>
+          <div class="size-options">
+            {% for size in product.size_list %}
+              <label class="size-option">
+                <input type="radio" name="size" value="{{ size.code }}" {% if forloop.first %}checked{% endif %} required>
+                <span>{{ size.name }}</span>
+              </label>
+            {% empty %}
+              <p class="form-hint">This piece is currently unavailable.</p>
+            {% endfor %}
+          </div>
+          <p class="form-hint" data-size-hint>Select a size to see availability.</p>
+        </fieldset>
+
+        <div class="pdp__buy-row">
+          <div class="qty-stepper" data-qty-stepper>
+            <button type="button" data-qty-minus aria-label="Decrease quantity">−</button>
+            <label class="visually-hidden" for="quantity">Quantity</label>
+            <input id="quantity" type="number" name="quantity" value="1" min="1" max="10" inputmode="numeric" data-qty-input>
+            <button type="button" data-qty-plus aria-label="Increase quantity">+</button>
+          </div>
+          <button type="submit" class="btn-editorial btn-editorial--dark pdp__add" data-add-to-bag {% if not product.in_stock %}disabled{% endif %}>
+            {% if product.in_stock %}Add to bag{% else %}Sold out{% endif %}
+            <i class="bi bi-bag" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="pdp__secondary">
+          <span class="pdp__stock" data-stock-line>
+            {% if product.in_stock %}{{ product.stock_total }} piece{{ product.stock_total|pluralize }} available{% else %}Currently sold out{% endif %}
+          </span>
+          <button formaction="{% url 'wishlist:toggle' product.slug %}" formmethod="post" formnovalidate
+                  class="text-link wishlist-inline{% if product.id in wishlist_ids %} is-saved{% endif %}" type="submit">
+            <i class="bi bi-heart{% if product.id in wishlist_ids %}-fill{% endif %}" aria-hidden="true"></i>
+            {% if product.id in wishlist_ids %}Saved{% else %}Save to wishlist{% endif %}
+          </button>
+        </div>
+      </form>
+
+      <div class="pdp__accordions">
+        <details open>
+          <summary>Details &amp; care <i class="bi bi-plus" aria-hidden="true"></i></summary>
+          <div class="pdp__accordion-body">
+            <p>{{ product.description|linebreaksbr }}</p>
+            {% if product.details_and_care %}<p class="pdp__care">{{ product.details_and_care|linebreaksbr }}</p>{% endif %}
+            <dl class="pdp__specs">
+              <div><dt>SKU</dt><dd>{{ product.sku }}</dd></div>
+              <div><dt>Department</dt><dd>{{ product.category.name }}</dd></div>
+              <div><dt>Colours</dt><dd>{% for color in product.color_list %}{{ color.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd></div>
+            </dl>
+          </div>
+        </details>
+        <details id="size-guide">
+          <summary>Size &amp; fit <i class="bi bi-plus" aria-hidden="true"></i></summary>
+          <div class="pdp__accordion-body">
+            <p>Our men’s and unisex pieces are cut with an easy, modern fit. If you prefer a closer fit, choose one size down.</p>
+            <ul class="pdp__list">
+              <li>Model wears size M.</li>
+              <li>Garment measurements are taken flat; allow a 1–2 cm tolerance.</li>
+            </ul>
+          </div>
+        </details>
+        <details>
+          <summary>Shipping &amp; returns <i class="bi bi-plus" aria-hidden="true"></i></summary>
+          <div class="pdp__accordion-body">
+            <p>Dispatch within 2–4 business days. Free shipping on orders over ₹{{ site_settings.free_shipping_threshold|floatformat:"-2"|intcomma }}; otherwise ₹{{ site_settings.shipping_flat_rate|floatformat:"-2" }}.</p>
+            <p>Unused pieces with tags can be returned within 7 days. Read the <a href="{% url 'core:returns_policy' %}">returns policy</a> or <a href="{% url 'core:shipping_policy' %}">shipping policy</a>.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="reviews-section" id="reviews" aria-labelledby="reviews-heading">
+  <div class="container-fluid shell">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Worn &amp; reviewed</p>
+        <h2 id="reviews-heading" class="section-heading__title">Reviews</h2>
+      </div>
+      <div class="reviews-summary">
+        {% if rating_total %}
+          {% include "components/stars.html" with rating=rating_avg %}
+          <span>{{ rating_avg|floatformat:1 }} / 5 · {{ rating_total }} review{{ rating_total|pluralize }}</span>
+        {% else %}
+          <span>Be the first to review this piece.</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="reviews-grid">
+      <div class="reviews-list">
+        {% for review in reviews %}
+          <article class="review-card">
+            <div class="review-card__head">
+              <div>
+                {% include "components/stars.html" with rating=review.rating %}
+                {% if review.title %}<h3>{{ review.title }}</h3>{% endif %}
+              </div>
+              <time datetime="{{ review.created_at|date:'c' }}">{{ review.created_at|date:"j M Y" }}</time>
+            </div>
+            <p>{{ review.body }}</p>
+            <div class="review-card__meta">
+              <span>{{ review.user.get_short_name|default:review.user.get_username }}</span>
+              {% if review.is_verified_purchase %}<span class="badge-label badge-label--verified"><i class="bi bi-check2-circle" aria-hidden="true"></i> Verified purchase</span>{% endif %}
+              {% if review.is_demo %}<span class="badge-label badge-label--sample">Sample data</span>{% endif %}
+            </div>
+          </article>
+        {% empty %}
+          <div class="reviews-empty">
+            <p>No approved reviews yet. Purchased this piece? Share how it fits.</p>
+          </div>
+        {% endfor %}
+        {% if approved_reviews and approved_reviews.0.is_demo %}
+          <p class="reviews-disclaimer">Reviews labelled “Sample data” are demonstration content included with the seed data — not real customer testimonials.</p>
+        {% endif %}
+      </div>
+
+      <aside class="reviews-form-wrap" aria-label="Write a review">
+        {% if user.is_authenticated %}
+          {% if user_reviewed %}
+            <p class="eyebrow">Thank you</p>
+            <h3>You've reviewed this piece</h3>
+            <p class="muted">Your review is shown once a moderator approves it.</p>
+          {% else %}
+            <p class="eyebrow">Share your thoughts</p>
+            <h3>Write a review</h3>
+            <form method="post" action="{% url 'reviews:submit' product.slug %}" class="review-form">
+              {% csrf_token %}
+              <fieldset class="rating-field">
+                <legend class="option-label">Rating</legend>
+                <div class="rating-options">
+                  {% for value, label in review_form.fields.rating.choices %}
+                    <label><input type="radio" name="rating" value="{{ value }}" required> <span>{{ value }}</span></label>
+                  {% endfor %}
+                </div>
+              </fieldset>
+              <label class="form-label" for="review-title">Title <span>(optional)</span></label>
+              <input class="form-control" id="review-title" type="text" name="title" maxlength="120" placeholder="A short headline">
+              <label class="form-label" for="review-body">Your review</label>
+              <textarea class="form-control" id="review-body" name="body" rows="4" required minlength="10" maxlength="2000" placeholder="How does it fit? How does it feel?"></textarea>
+              <button type="submit" class="btn-editorial btn-editorial--dark">Submit review</button>
+              <p class="form-hint">Reviews are moderated. Verified purchase badges are only shown for orders placed on this store.</p>
+            </form>
+          {% endif %}
+        {% else %}
+          <p class="eyebrow">Reviews</p>
+          <h3>Signed-in customers only</h3>
+          <p>Reviews are tied to verified accounts to keep them honest. Sign in to share your experience.</p>
+          <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}" class="btn-editorial btn-editorial--dark">Sign in to review</a>
+        {% endif %}
+      </aside>
+    </div>
+  </div>
+</section>
+
+{% if related_products %}
+<section class="product-section product-section--related" aria-labelledby="related-heading">
+  <div class="container-fluid shell">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Keep looking</p>
+        <h2 id="related-heading" class="section-heading__title">You may also like</h2>
+      </div>
+      <a href="{{ product.category.get_absolute_url }}" class="text-link">More {{ product.category.name|lower }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+    <div class="product-grid">
+      {% for related in related_products %}
+        {% include "components/product_card.html" with product=related %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{{ product.variant_catalogue|json_script:"variant-data" }}
+{% endblock %}

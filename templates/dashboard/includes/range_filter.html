@@ -1,0 +1,27 @@
+{% load dashboard_tags %}
+<div class="dash-range" role="group" aria-label="Date range">
+  {% for key, label in range_choices.items %}
+    <a href="{% qs_replace range=key page='' %}"
+       class="{% if range_key == key %}is-active{% endif %}"
+       {% if range_key == key %}aria-current="true"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</div>
+<form method="get" class="dash-filters__group" aria-label="Custom date range">
+  {% for key, value in request.GET.items %}
+    {% if key != 'range' and key != 'from' and key != 'to' and key != 'page' and value %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endif %}
+  {% endfor %}
+  <input type="hidden" name="range" value="custom">
+  <div class="dash-filters__field">
+    <label for="dash-range-from">From</label>
+    <input class="dash-input dash-input--sm" type="date" id="dash-range-from"
+           name="from" value="{{ request.GET.from|default:'' }}">
+  </div>
+  <div class="dash-filters__field">
+    <label for="dash-range-to">To</label>
+    <input class="dash-input dash-input--sm" type="date" id="dash-range-to"
+           name="to" value="{{ request.GET.to|default:'' }}">
+  </div>
+  <button class="dash-btn dash-btn--light dash-btn--sm" type="submit">Apply</button>
+</form>
